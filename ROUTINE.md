@@ -64,13 +64,14 @@ no questions. Steps:
    I know the field (TabPFN, tabular ICL, LLM embeddings, relational FMs,
    neural processes) — be precise, not vague.
 
-4. INDUSTRY NEWS (config.yaml -> industry_watch). Web-search for news from
-   ONLY THE LAST 24 HOURS (config lookback_days=1) about the listed
-   companies' tabular-FM work: model releases, papers, funding, launches,
-   benchmarks. Include ONLY items genuinely published/announced in the last
-   ~24h AND that materially concern tabular FMs / tabular ML / relational
-   FMs / neural processes. Verify each against a real dated URL — do NOT
-   pad with older items or "context". If nothing qualifies, use [].
+4. INDUSTRY NEWS (config.yaml -> industry_watch). Web-search for news about
+   the listed companies' tabular-FM work: model releases, papers, funding,
+   launches, benchmarks. Window: ONLY THE LAST 24 HOURS (lookback_days=1) —
+   EXCEPT on Mondays, cover the LAST ~72 HOURS / Friday-Sunday
+   (monday_lookback_days=3) to sweep the weekend. Include ONLY items
+   genuinely published in that window AND that materially concern tabular
+   FMs / tabular ML / relational FMs / neural processes. Verify each against
+   a real dated URL — do NOT pad with older items or "context". Else use [].
 
 5. SPOTLIGHT (config.yaml -> spotlight). Pick the one theme best supported
    by this issue's papers + industry news, and write a few concise

@@ -92,6 +92,9 @@ def main() -> int:
     if args.first_run:
         since = now - timedelta(days=CONFIG["run"]["first_run_lookback_days"])
         window_label = f"last {CONFIG['run']['first_run_lookback_days']} days"
+    elif now.weekday() == 0:  # Monday: reach back to Friday to cover the weekend
+        since = now - timedelta(hours=CONFIG["run"].get("monday_lookback_hours", 74))
+        window_label = "since Friday"
     else:
         since = now - timedelta(hours=CONFIG["run"]["lookback_hours"])
         window_label = "last 24 hours"
