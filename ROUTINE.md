@@ -18,7 +18,8 @@ API credits. The scripts handle fetching, dedup, and email delivery.
    Make sure the environment allows network access to arxiv.org,
    huggingface.co, api2.openreview.net and smtp.gmail.com — plus general
    web access (web search / fetch) for the industry-news section.
-5. Trigger: **schedule**, daily, ~05:30 UTC (≈7:30 Paris in summer).
+5. Trigger: **schedule**, daily, **07:30 UTC** (delivered before 10:00 Paris;
+   the run takes ~10-15 min).
 6. Paste the prompt below.
 7. First issue: run the routine once manually, temporarily replacing the
    flag in step 1 of the prompt with `--first-run --fetch-only` to backfill

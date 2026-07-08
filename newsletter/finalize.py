@@ -82,13 +82,10 @@ def main() -> int:
     window_label = digest.get("window_label", "last 24 hours")
     industry = digest.get("industry") or []
     spotlight = digest.get("spotlight") or None
-    email_cfg = CONFIG["email"]
-    name = email_cfg.get("newsletter_name", "The Daily Prior")
-    tagline = email_cfg.get("tagline", "")
+    name = CONFIG["email"].get("newsletter_name", "In-Context")
 
     html = build_html(
-        papers, window_label, industry=industry, spotlight=spotlight,
-        name=name, tagline=tagline,
+        papers, window_label, industry=industry, spotlight=spotlight, name=name,
     )
     now = datetime.now(timezone.utc)
     extra = f" + {len(industry)} industry" if industry else ""

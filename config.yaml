@@ -285,11 +285,11 @@ email:
   smtp_host: smtp.gmail.com
   smtp_port: 587
   # Newsletter name — shows up in the subject line and the email header.
-  # "Context Window" nods to in-context learning + the daily window of papers.
-  # Swap freely (e.g. "The Support Set", "In-Context", "Context Set").
-  subject_prefix: "📊 Context Window"
-  newsletter_name: "Context Window"
-  tagline: "Your daily window into tabular ML & foundation models"
+  # "In-Context" nods to in-context learning (TabPFN/TabICL). The email
+  # subtitle is generated automatically ("Your daily digest of the top N
+  # papers in tabular AI").
+  subject_prefix: "📊 In-Context"
+  newsletter_name: "In-Context"
 
 # ------------------------------------------------------------
 # SCHEDULING BEHAVIOR

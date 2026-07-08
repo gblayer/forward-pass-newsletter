@@ -55,7 +55,7 @@ windows and updated arXiv versions never spam you twice.
    emailing, it uploads `preview.html` as a workflow artifact so you can
    check the output and tune `config.yaml` before going live.
 
-4. Done. The cron fires daily at 05:30 UTC (~7:30 Paris in summer).
+4. Done. The cron fires daily at 07:30 UTC (delivered before 10:00 Paris).
    arXiv announces new submissions around midnight UTC Mon–Fri, so the
    morning run catches the fresh batch. Weekends are naturally quiet.
 

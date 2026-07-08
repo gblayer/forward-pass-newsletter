@@ -2,9 +2,10 @@ name: Daily Tabular ML Newsletter
 
 on:
   schedule:
-    # 05:30 UTC = 07:30 Paris in summer (CEST), 06:30 in winter (CET).
+    # 07:30 UTC → ~09:30 Paris (CEST, summer) / ~08:30 (CET, winter).
+    # The run takes ~10-15 min, so the digest lands before 10:00 Paris.
     # arXiv announces new papers ~00:00 UTC Mon-Fri, so this catches them.
-    - cron: "30 5 * * *"
+    - cron: "30 7 * * *"
   workflow_dispatch:
     inputs:
       first_run:

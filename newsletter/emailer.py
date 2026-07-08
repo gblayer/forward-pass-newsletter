@@ -98,17 +98,17 @@ def build_html(
     window_label: str,
     industry: list[dict] | None = None,
     spotlight: dict | None = None,
-    name: str = "Context Window",
-    tagline: str = "Your daily window into tabular ML & foundation models",
+    name: str = "In-Context",
 ) -> str:
+    n = len(papers)
     if papers:
+        subtitle = f"Your daily digest of the top {n} paper{'s' if n != 1 else ''} in tabular AI"
         academic_block = _section_header("📄 Academic — new papers") + "".join(
             _paper_html(p) for p in papers
         )
-        intro = f"{len(papers)} paper{'s' if len(papers) != 1 else ''} matched your profile ({window_label})."
     else:
-        academic_block = ""
-        intro = f"No new relevant papers in the {window_label}. Quiet day — enjoy the coffee. ☕"
+        subtitle = "Your daily digest of tabular AI papers"
+        academic_block = '<p style="color:#555;font-size:14px;">No new papers today — quiet day. ☕</p>'
 
     industry_block = ""
     if industry:
@@ -120,8 +120,7 @@ def build_html(
     return f"""
     <div style="max-width:640px;margin:0 auto;font-family:-apple-system,Segoe UI,Roboto,sans-serif;">
       <h2 style="font-weight:600;margin-bottom:2px;">📊 {name}</h2>
-      <div style="color:#888;font-size:13px;margin-bottom:10px;">{tagline}</div>
-      <p style="color:#555;font-size:14px;">{intro}</p>
+      <div style="color:#888;font-size:13px;margin-bottom:16px;">{subtitle}</div>
       {spotlight_block}
       {academic_block}
       {industry_block}
