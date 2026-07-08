@@ -98,8 +98,8 @@ def build_html(
     window_label: str,
     industry: list[dict] | None = None,
     spotlight: dict | None = None,
-    name: str = "The Daily Prior",
-    tagline: str = "Your daily read on tabular ML & foundation models",
+    name: str = "Context Window",
+    tagline: str = "Your daily window into tabular ML & foundation models",
 ) -> str:
     if papers:
         academic_block = _section_header("📄 Academic — new papers") + "".join(

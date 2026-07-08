@@ -213,7 +213,9 @@ huggingface_daily:
   enabled: true                    # all HF daily papers become candidates
 
 openreview:
-  enabled: true                    # best-effort keyword search of recent notes
+  enabled: false                   # OFF — conference/OpenReview notes excluded;
+                                   # decisions are bursty and low-yield for a
+                                   # daily arXiv/HF-driven newsletter.
   search_terms: [tabular, "foundation model", "in-context learning", relational]
 
 semantic_scholar:
@@ -283,11 +285,11 @@ email:
   smtp_host: smtp.gmail.com
   smtp_port: 587
   # Newsletter name — shows up in the subject line and the email header.
-  # "The Daily Prior" nods to Prior-data Fitted Networks (PFNs) / Bayesian
-  # priors. Swap freely (e.g. "In-Context", "Tabula", "The Daily Pivot").
-  subject_prefix: "📊 The Daily Prior"
-  newsletter_name: "The Daily Prior"
-  tagline: "Your daily read on tabular ML & foundation models"
+  # "Context Window" nods to in-context learning + the daily window of papers.
+  # Swap freely (e.g. "The Support Set", "In-Context", "Context Set").
+  subject_prefix: "📊 Context Window"
+  newsletter_name: "Context Window"
+  tagline: "Your daily window into tabular ML & foundation models"
 
 # ------------------------------------------------------------
 # SCHEDULING BEHAVIOR
