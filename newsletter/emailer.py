@@ -98,7 +98,7 @@ def build_html(
     window_label: str,
     industry: list[dict] | None = None,
     spotlight: dict | None = None,
-    name: str = "In-Context",
+    name: str = "Forward Pass",
 ) -> str:
     n = len(papers)
     if papers:
@@ -119,7 +119,7 @@ def build_html(
 
     return f"""
     <div style="max-width:640px;margin:0 auto;font-family:-apple-system,Segoe UI,Roboto,sans-serif;">
-      <h2 style="font-weight:600;margin-bottom:2px;">📊 {name}</h2>
+      <h2 style="font-weight:600;margin-bottom:2px;">⏩ {name}</h2>
       <div style="color:#888;font-size:13px;margin-bottom:16px;">{subtitle}</div>
       {spotlight_block}
       {academic_block}

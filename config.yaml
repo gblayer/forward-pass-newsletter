@@ -285,11 +285,11 @@ email:
   smtp_host: smtp.gmail.com
   smtp_port: 587
   # Newsletter name — shows up in the subject line and the email header.
-  # "In-Context" nods to in-context learning (TabPFN/TabICL). The email
-  # subtitle is generated automatically ("Your daily digest of the top N
-  # papers in tabular AI").
-  subject_prefix: "📊 In-Context"
-  newsletter_name: "In-Context"
+  # "Forward Pass" nods to a neural-net forward pass (TFMs predict in one).
+  # The email subtitle is generated automatically ("Your daily digest of
+  # the top N papers in tabular AI").
+  subject_prefix: "⏩ Forward Pass"
+  newsletter_name: "Forward Pass"
 
 # ------------------------------------------------------------
 # SCHEDULING BEHAVIOR
