@@ -1,0 +1,8 @@
+__pycache__/
+preview.html
+candidates.json
+digest.json
+.env
+.venv/
+.DS_Store
+fetch.log

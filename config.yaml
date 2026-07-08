@@ -1,0 +1,297 @@
+# ============================================================
+# Tabular ML Newsletter — configuration
+# Edit this file to tune what you receive. No code changes needed.
+# ============================================================
+
+# ------------------------------------------------------------
+# TOPIC PROFILE
+# This is the single most important field. It is injected verbatim
+# into the Claude relevance-judgment prompt. Papers are kept or
+# dropped based on whether they connect to THIS description —
+# not just on keywords or authors. Keep it rich and broad.
+# ------------------------------------------------------------
+topic_profile: |
+  I am a PhD student working on tabular machine learning, with a focus on
+  tabular foundation models (TFMs) and the intersection of language models
+  and structured data. A paper is relevant if it connects to ANY of the
+  following themes, even loosely:
+
+  CORE:
+  - Tabular foundation models and tabular in-context learning
+    (TabPFN, TabICL, TabSTAR, ConTextTab, TabDPT, LimiX, Orion, iLTM, ...)
+  - In-context learning IN and FOR tabular foundation models: the mechanisms,
+    theory, and empirical behaviour of how TFMs (TabPFN, TabICL, prior-fitted
+    networks) learn in-context. CORE when clearly tied to tabular / TFM ICL;
+    generic ICL theory on synthetic token sequences with no tabular connection
+    is at most weakly adjacent, not core.
+  - Work that BUILDS ON TabPFN / TabICL / TabPFN-v2 and their variants:
+    extending, fine-tuning, adapting, distilling, scaling, retrieving for,
+    probing or benchmarking them — INCLUDING papers that use them as
+    backbones, classification heads, feature extractors or primary baselines.
+  - Neural processes and amortized-inference / meta-learning model families
+    (conditional, attentive and transformer neural processes) as a backbone
+    for in-context or probabilistic tabular prediction — this is the modelling
+    lineage behind several tabular foundation models (e.g. Fundamental's
+    NEXUS). RELEVANT only when the NP / meta-learning *method* is the
+    contribution or is tied to tabular / regression / ICL prediction; a pure
+    NP application to images, weather or spatial fields is NOT relevant.
+  - Embedding extraction and representation learning for STRING / TEXT
+    features in tables: encoding column names, cell text, categorical
+    values, IDs and free-text fields into semantic vectors; language-aware
+    handling of the string-heavy columns that dominate real enterprise data.
+  - Deep learning architectures for tabular data (transformers for tables,
+    row/column attention, encoder-decoder designs, retrieval-based tabular models)
+  - Relational / multi-table foundation models and relational deep learning
+    (KumoRFM, relational graph transformers, temporal heterogeneous graphs)
+  - Semantic and language-aware tabular learning: LLM embeddings for
+    tabular features, context-aware semantic embeddings, exploiting column
+    names / cell text / metadata, tables with free-text fields
+  - Table serialization and string representations of tables for LLMs;
+    LLMs prompted or fine-tuned on tabular prediction tasks
+
+  ADAPTATION & EFFICIENCY:
+  - Fine-tuning, adapters, PEFT/LoRA, prompt-tuning or knowledge-informed
+    adaptation of tabular foundation models
+  - Distillation, compression, quantization, pruning of TFMs or of LLMs
+    used for structured data
+  - Computational/inference cost of TFMs and LLMs: efficient attention,
+    scaling context, throughput, memory footprint, deployment constraints
+
+  DATA, EVALUATION & CRITIQUE:
+  - Benchmarks and evaluation methodology for tabular ML; contamination,
+    illusion of generalization, enterprise vs public data distribution gaps
+  - Feature engineering, preprocessing and data-centric approaches for
+    tabular benchmarks; AutoML for tabular data
+  - Synthetic data generation / priors for pretraining tabular models
+  - Transfer learning and cross-table generalization
+  - Tabular ensembles and hyperparameter ensembles (e.g. TabPack-style)
+  - GBDT vs deep learning comparisons on tabular data
+
+  ADJACENT (still relevant):
+  - Table retrieval, table understanding, table QA, text-to-SQL when
+    focused on representation learning or retrieval over tables
+  - In-context learning theory/mechanisms when clearly transferable to
+    tabular ICL; test-time training/adaptation for structured data
+  - Graph neural networks applied to relational databases
+  - Time-series foundation models ONLY when framed as structured-data /
+    tabular-adjacent foundation modeling
+
+  APPLIED PAPERS — the important distinction:
+  - RELEVANT: applied or empirical papers that yield insight ABOUT tabular
+    ML or TFMs themselves — e.g. enterprise-vs-public data distribution gaps,
+    how model rankings shift on real vs benchmark data, when TFMs beat GBDTs,
+    few-label / deployment / efficiency trade-offs, data-centric findings.
+    (Example of clearly relevant: "Exploring Differences Between Tabular
+    Enterprise Data and Public Benchmarks", Kim et al., SAP.)
+  - NOT relevant: papers that merely USE a tabular model (XGBoost, a TFM) as
+    a tool to obtain a domain result (e.g. "predicting hospital readmission
+    with XGBoost", "lung-CT phenotyping with TabPFN as one of seven heads")
+    without a methodological or empirical contribution to tabular ML itself.
+
+  NOT relevant (reject):
+  - Pure NLP/vision/audio papers with no structured-data angle
+  - Generic LLM papers (alignment, RLHF, agents, safety) without a
+    tables/structured-data connection
+  - Pure applications of neural processes / meta-learning outside tabular
+    (image completion, weather downscaling, spatial fields)
+
+# ------------------------------------------------------------
+# CANDIDATE GENERATION (stage 1, cheap & broad)
+# A paper becomes a candidate if it matches ANY prefilter keyword
+# (case-insensitive, matched in title+abstract), OR is authored by
+# a watchlist author, OR appears in HuggingFace Daily Papers.
+# Keep this broad — Claude does the precise filtering in stage 2.
+# ------------------------------------------------------------
+prefilter_keywords:
+  - tabular
+  - "table representation"
+  - "table understanding"
+  - "table retrieval"
+  - "tables"
+  - "structured data"
+  - "relational data"
+  - "relational database"
+  - "relational deep learning"
+  - "foundation model"
+  - "in-context learning"
+  - "neural process"
+  - "neural processes"
+  - "conditional neural process"
+  - "attentive neural process"
+  - "amortized inference"
+  - "meta-learning"
+  - tabpfn
+  - tabicl
+  - "gradient boosting"
+  - gbdt
+  - xgboost
+  - "feature engineering"
+  - "text-to-sql"
+  - "column embedding"
+  - "semantic embedding"
+  - "string features"
+  - "text features"
+  - "representation learning"
+  - "prior-fitted"
+  - "prior-data fitted"
+  - serialization
+  - distillation
+  - "parameter-efficient"
+  - lora
+  - adapter
+
+# Watchlist: any new paper by these authors becomes a candidate
+# regardless of keywords. Seeded from your project papers + key
+# people in the TFM community. Add/remove freely.
+author_watchlist:
+  # SAP tabular ICL group
+  - Maximilian Schambach
+  - Marco Spinaci
+  - Marek Polewczyk
+  - Johannes Höhne
+  - Sam Thelin
+  - Günther Schindler
+  - Myung Jun Kim
+  # Ljubljana / Cambridge LLM-embeddings group
+  - Boshko Koloski
+  - Blaž Škrlj
+  - Nikola Simidjievski
+  - Xiangjian Jiang
+  - Andrei Margeloiu
+  - Mateja Jamnik
+  # Kumo / Stanford relational FM group
+  - Matthias Fey
+  - Jure Leskovec
+  - Federico López
+  - Vid Kocijan
+  - Jan Eric Lenssen
+  - Valter Hudovernik
+  - Vijay Prakash Dwivedi
+  # TabPFN / Prior Labs / Freiburg
+  - Noah Hollmann
+  - Frank Hutter
+  - Samuel Müller
+  - Lennart Purucker
+  # TabICL / SODA-Inria
+  - Gaël Varoquaux
+  - Jingang Qu
+  - David Holzmüller
+  - Léo Grinsztajn
+  # Yandex research tabular DL
+  - Yury Gorishniy
+  - Ivan Rubachev
+  - Artem Babenko
+  - Akim Kotelnikov
+  # Benchmarks / AutoML
+  - Andrej Tschalzev
+  - Nick Erickson
+  # TabSTAR
+  - Alan Arazi
+  - Eilam Shapira
+  - Roi Reichart
+  # Efficiency / TabPFN-revisited
+  - Si-Yang Liu
+  - Han-Jia Ye
+  # Table retrieval / understanding
+  - Madelon Hulsebos
+  # iLTM
+  - David Bonet
+  - Alexander G. Ioannidis
+  # Rethinking Tabular / transfer via LM
+  - Josh Gardner
+  - Duncan McElfresh
+
+# ------------------------------------------------------------
+# SOURCES
+# ------------------------------------------------------------
+arxiv:
+  enabled: true
+  categories: [cs.LG, stat.ML, cs.AI, cs.CL, cs.DB, cs.IR]
+  max_results_per_category: 400   # per run; recent window only
+
+huggingface_daily:
+  enabled: true                    # all HF daily papers become candidates
+
+openreview:
+  enabled: true                    # best-effort keyword search of recent notes
+  search_terms: [tabular, "foundation model", "in-context learning", relational]
+
+semantic_scholar:
+  enabled: false                   # optional; set true + provide S2_API_KEY secret
+                                   # adds citation-graph-based discovery around
+                                   # your seed papers and watchlist authors
+
+# ------------------------------------------------------------
+# INDUSTRY WATCH (routine mode only)
+# The Claude Code routine session web-searches for FRESH news
+# (within lookback_days) about these organizations' tabular-FM work:
+# model releases, papers, funding, product launches, benchmarks.
+# Only genuinely relevant + recent items are included; if nothing
+# newsworthy happened, the industry section is omitted entirely.
+# ------------------------------------------------------------
+industry_watch:
+  enabled: true
+  lookback_days: 7
+  companies:
+    - Prior Labs          # TabPFN
+    - Fundamental         # neural-process tabular FMs
+    - Kumo.ai             # KumoRFM / relational FMs
+    - NVIDIA
+    - Microsoft Research
+    - Google / DeepMind
+    - Amazon / AWS        # AutoGluon, Mitra
+    - Mitra
+    - Orion
+    - SAP                 # tabular ICL group
+    - Salesforce
+    - "SODA / Inria"      # TabICL
+  # Only surface items that materially concern tabular foundation models,
+  # tabular ML, relational FMs, or neural-process modelling.
+
+# ------------------------------------------------------------
+# SPOTLIGHT (routine mode only)
+# A short themed section on the current status of tabular foundation
+# models in ONE specific vertical, rotating / auto-selected each issue
+# from the week's papers + news. Kept concise (a few sentences).
+# ------------------------------------------------------------
+spotlight:
+  enabled: true
+  themes:
+    - "time-series & forecasting"
+    - "finance / trading"
+    - "healthcare & clinical"
+    - "relational / enterprise databases"
+    - "efficiency & deployment"
+    - "evaluation & benchmarks"
+  # The session picks the theme best supported by this issue's material.
+
+# ------------------------------------------------------------
+# CLAUDE (relevance filter + summaries)
+# ------------------------------------------------------------
+claude:
+  filter_model: claude-haiku-4-5-20251001   # cheap yes/no relevance batching
+  summary_model: claude-sonnet-4-6          # writes the 3-bullet digests
+  filter_batch_size: 20
+  max_papers_in_newsletter: 10              # cap; ranked by relevance score
+
+# ------------------------------------------------------------
+# EMAIL (SMTP; works with Gmail app password)
+# Secrets are read from env vars, never stored here:
+#   SMTP_USER, SMTP_PASSWORD, NEWSLETTER_TO
+# ------------------------------------------------------------
+email:
+  smtp_host: smtp.gmail.com
+  smtp_port: 587
+  # Newsletter name — shows up in the subject line and the email header.
+  # "The Daily Prior" nods to Prior-data Fitted Networks (PFNs) / Bayesian
+  # priors. Swap freely (e.g. "In-Context", "Tabula", "The Daily Pivot").
+  subject_prefix: "📊 The Daily Prior"
+  newsletter_name: "The Daily Prior"
+  tagline: "Your daily read on tabular ML & foundation models"
+
+# ------------------------------------------------------------
+# SCHEDULING BEHAVIOR
+# ------------------------------------------------------------
+run:
+  lookback_hours: 26        # daily window (26h = safety overlap; dedup handles it)
+  first_run_lookback_days: 7

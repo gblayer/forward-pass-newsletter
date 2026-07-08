@@ -1,0 +1,67 @@
+name: Daily Tabular ML Newsletter
+
+on:
+  schedule:
+    # 05:30 UTC = 07:30 Paris in summer (CEST), 06:30 in winter (CET).
+    # arXiv announces new papers ~00:00 UTC Mon-Fri, so this catches them.
+    - cron: "30 5 * * *"
+  workflow_dispatch:
+    inputs:
+      first_run:
+        description: "Backfill last 7 days (use for issue #1)"
+        type: boolean
+        default: false
+      dry_run:
+        description: "Build preview.html instead of sending email"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write   # to commit seen_papers.json back
+
+concurrency:
+  group: newsletter
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Run newsletter
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          NEWSLETTER_TO: ${{ secrets.NEWSLETTER_TO }}
+          S2_API_KEY: ${{ secrets.S2_API_KEY }}
+        run: |
+          FLAGS=""
+          if [ "${{ inputs.first_run }}" = "true" ]; then FLAGS="$FLAGS --first-run"; fi
+          if [ "${{ inputs.dry_run }}" = "true" ]; then FLAGS="$FLAGS --dry-run"; fi
+          python -m newsletter.main $FLAGS
+
+      - name: Upload preview (dry runs)
+        if: ${{ inputs.dry_run }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: newsletter-preview
+          path: preview.html
+          if-no-files-found: ignore
+
+      - name: Persist seen papers
+        run: |
+          git config user.name "newsletter-bot"
+          git config user.email "actions@github.com"
+          git add seen_papers.json
+          git diff --cached --quiet || git commit -m "chore: update seen papers [skip ci]"
+          git push

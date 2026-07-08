@@ -1,0 +1,105 @@
+# Running this newsletter as a Claude Code Routine (no API key, $0 extra on Max)
+
+In routine mode, the daily Claude Code session does the relevance scoring
+and summary writing itself — consuming your subscription usage instead of
+API credits. The scripts handle fetching, dedup, and email delivery.
+
+## Setup
+
+1. Push this repo to GitHub (routines clone a repo at each run).
+2. Go to **claude.ai/code/routines** → **New routine**.
+3. Select this repository.
+4. In the routine's **cloud environment**, add these environment variables
+   (Anthropic API key NOT needed):
+   - `SMTP_USER` — your Gmail address
+   - `SMTP_PASSWORD` — a Gmail App Password
+     (myaccount.google.com/apppasswords, requires 2-Step Verification)
+   - `NEWSLETTER_TO` — where the digest should land
+   Make sure the environment allows network access to arxiv.org,
+   huggingface.co, api2.openreview.net and smtp.gmail.com — plus general
+   web access (web search / fetch) for the industry-news section.
+5. Trigger: **schedule**, daily, ~05:30 UTC (≈7:30 Paris in summer).
+6. Paste the prompt below.
+7. First issue: run the routine once manually, temporarily replacing the
+   flag in step 1 of the prompt with `--first-run --fetch-only` to backfill
+   the last 7 days.
+
+## Routine prompt (paste as-is)
+
+```
+You are producing my daily tabular-ML paper newsletter. Work autonomously,
+no questions. Steps:
+
+1. Install deps and fetch candidates:
+     pip install -r requirements.txt
+     python -m newsletter.main --fetch-only
+   This writes candidates.json (papers from the last 24h, already deduped
+   against seen_papers.json).
+
+2. Read config.yaml and internalize the `topic_profile` — it defines what
+   is relevant to my PhD. Then read candidates.json and score EVERY
+   candidate 0-10 against that profile. Be generous with adjacent-but-
+   connected work (adapters, distillation, TFM/LLM efficiency, table
+   serialization, relational FMs, benchmarks critique), strict with papers
+   that merely apply off-the-shelf tabular models to a domain problem.
+   Treat these as CORE (score 7-9, not borderline):
+     - in-context learning IN/FOR tabular foundation models (mechanisms,
+       theory, empirical studies of TabPFN/TabICL/prior-fitted networks);
+     - work that BUILDS ON TabPFN / TabICL / TabPFN-v2 (extends, fine-tunes,
+       distills, benchmarks, or uses them as backbone/head/baseline);
+     - neural processes (conditional / attentive / transformer NPs) used for
+       in-context or probabilistic tabular prediction.
+
+3. For every paper scoring >= 6 (cap: the 12 highest), write a pedagogical
+   digest with three fields — problem (1-2 sentences: goal and why it
+   matters), method (1-2 sentences, name the core idea concretely),
+   limitations (honest; prefix with "Likely:" if inferred rather than
+   stated in the abstract). Plain language, no hype, max ~40 words per
+   field. I know the field (TabPFN, tabular ICL, LLM embeddings,
+   relational FMs, neural processes) — be precise, not vague.
+
+4. INDUSTRY NEWS (config.yaml -> industry_watch). Web-search for news from
+   the LAST `lookback_days` days about the listed companies' tabular-FM
+   work: model releases, papers, funding, product launches, benchmarks.
+   Include ONLY items that (a) are genuinely from that window and (b)
+   materially concern tabular foundation models / tabular ML / relational
+   FMs / neural processes. Verify each against a real URL — do NOT invent
+   or pad. If nothing qualifies, use an empty list (the section is omitted).
+
+5. SPOTLIGHT (config.yaml -> spotlight). Pick the one theme best supported
+   by this issue's papers + industry news, and write a few concise
+   sentences (<= ~90 words) on the current status of tabular foundation
+   models in that vertical, grounded in this week's material. If there is
+   too little to say, omit it.
+
+6. Write digest.json in the repo root:
+   {"window_label": "<from candidates.json>",
+    "papers": [{id, title, authors, url, source, relevance_score,
+                matched_author, matched_keyword, is_new_version,
+                bullets: {problem, method, limitations}}],
+    "industry": [{company, headline, date, url, summary}],   // [] if none
+    "spotlight": {theme, body}}                               // omit if none
+   Copy id/title/authors/url/source/matched_* fields verbatim from
+   candidates.json. If NO paper scores >= 6, still write digest.json (empty
+   papers list) — the industry/spotlight sections may still carry the issue.
+
+7. Send it:  python -m newsletter.finalize digest.json
+   This emails the digest and updates seen_papers.json.
+
+8. Commit and push seen_papers.json to the default branch with message
+   "chore: update seen papers". Do NOT commit candidates.json or
+   digest.json.
+
+If a fetch source fails, proceed with whatever candidates you have. If a
+web search for industry news fails, proceed with an empty industry list.
+If SMTP fails, retry once, then leave the digest content in your final
+summary so I can read it in the session.
+```
+
+## Notes
+
+- Routines are in research preview and have per-account daily run caps;
+  one run/day fits comfortably.
+- The GitHub Actions path (README.md) remains fully functional if you
+  ever prefer the deterministic scripted version — the two modes coexist
+  in this repo.
