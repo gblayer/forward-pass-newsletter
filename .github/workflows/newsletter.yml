@@ -1,11 +1,12 @@
 name: Daily Tabular ML Newsletter
 
 on:
-  schedule:
-    # 07:30 UTC → ~09:30 Paris (CEST, summer) / ~08:30 (CET, winter).
-    # The run takes ~10-15 min, so the digest lands before 10:00 Paris.
-    # arXiv announces new papers ~00:00 UTC Mon-Fri, so this catches them.
-    - cron: "30 7 * * *"
+  # Scheduled trigger DISABLED — delivery runs via the Claude Code cloud
+  # routine (see ROUTINE.md), not GitHub Actions. This scripted/API path
+  # stays available for MANUAL runs only. To re-enable a daily CI send,
+  # uncomment the cron below AND add ANTHROPIC_API_KEY + SMTP_* repo secrets.
+  # schedule:
+  #   - cron: "30 7 * * 1-4"   # Mon-Thu 07:30 UTC (~09:30 Paris)
   workflow_dispatch:
     inputs:
       first_run:
