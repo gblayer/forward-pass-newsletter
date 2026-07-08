@@ -55,21 +55,22 @@ no questions. Steps:
      - neural processes (conditional / attentive / transformer NPs) used for
        in-context or probabilistic tabular prediction.
 
-3. For every paper scoring >= 6 (cap: the 12 highest), write a pedagogical
-   digest with three fields — problem (1-2 sentences: goal and why it
-   matters), method (1-2 sentences, name the core idea concretely),
-   limitations (honest; prefix with "Likely:" if inferred rather than
-   stated in the abstract). Plain language, no hype, max ~40 words per
-   field. I know the field (TabPFN, tabular ICL, LLM embeddings,
-   relational FMs, neural processes) — be precise, not vague.
+3. For every paper scoring >= 6, write a pedagogical digest with three
+   fields — problem (1-2 sentences: goal and why it matters), method (1-2
+   sentences, name the core idea concretely), limitations (honest; prefix
+   with "Likely:" if inferred rather than stated in the abstract). Plain
+   language, no hype, max ~40 words per field. Publish ALL papers that score
+   >= 6 even if there are fewer than 10; only cap at the 10 highest if more.
+   I know the field (TabPFN, tabular ICL, LLM embeddings, relational FMs,
+   neural processes) — be precise, not vague.
 
 4. INDUSTRY NEWS (config.yaml -> industry_watch). Web-search for news from
-   the LAST `lookback_days` days about the listed companies' tabular-FM
-   work: model releases, papers, funding, product launches, benchmarks.
-   Include ONLY items that (a) are genuinely from that window and (b)
-   materially concern tabular foundation models / tabular ML / relational
-   FMs / neural processes. Verify each against a real URL — do NOT invent
-   or pad. If nothing qualifies, use an empty list (the section is omitted).
+   ONLY THE LAST 24 HOURS (config lookback_days=1) about the listed
+   companies' tabular-FM work: model releases, papers, funding, launches,
+   benchmarks. Include ONLY items genuinely published/announced in the last
+   ~24h AND that materially concern tabular FMs / tabular ML / relational
+   FMs / neural processes. Verify each against a real dated URL — do NOT
+   pad with older items or "context". If nothing qualifies, use [].
 
 5. SPOTLIGHT (config.yaml -> spotlight). Pick the one theme best supported
    by this issue's papers + industry news, and write a few concise
@@ -89,7 +90,10 @@ no questions. Steps:
    papers list) — the industry/spotlight sections may still carry the issue.
 
 7. Send it:  python -m newsletter.finalize digest.json
-   This emails the digest and updates seen_papers.json.
+   This emails the digest and updates seen_papers.json. NOTE: finalize only
+   sends when there is content — if BOTH papers and industry are empty (a
+   fully quiet day) it deliberately sends NO email and just updates
+   seen_papers.json. That is expected, not an error.
 
 8. Commit and push seen_papers.json to the default branch with message
    "chore: update seen papers". Do NOT commit candidates.json or

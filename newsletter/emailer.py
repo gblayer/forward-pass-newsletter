@@ -119,9 +119,17 @@ def build_html(
         subtitle = "Your daily digest of tabular AI papers"
         academic_block = '<p style="color:#555;font-size:14px;">No new papers today — quiet day. ☕</p>'
 
+    # industry is None -> section omitted (e.g. API mode); [] -> explicit
+    # "no updates" note; [items] -> the news. So on a sent issue the industry
+    # section is always present, matching the daily-digest rules.
     industry_block = ""
-    if industry:
-        industry_block = _section_header("🏢 Industry — this week") + _industry_html(industry)
+    if industry is not None:
+        if industry:
+            industry_block = _section_header("🏢 Industry — today") + _industry_html(industry)
+        else:
+            industry_block = _section_header("🏢 Industry — today") + (
+                '<p style="color:#555;font-size:14px;">No new updates in the industry today.</p>'
+            )
 
     # Spotlight leads the issue (top), then the academic papers, then industry.
     spotlight_block = _spotlight_html(spotlight) if spotlight else ""

@@ -233,7 +233,7 @@ semantic_scholar:
 # ------------------------------------------------------------
 industry_watch:
   enabled: true
-  lookback_days: 7
+  lookback_days: 1                 # daily digest: industry news from the last 24h
   companies:
     - Prior Labs          # TabPFN
     - Fundamental         # neural-process tabular FMs

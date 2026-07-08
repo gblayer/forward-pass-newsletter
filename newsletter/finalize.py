@@ -84,22 +84,30 @@ def main() -> int:
     spotlight = digest.get("spotlight") or None
     name = CONFIG["email"].get("newsletter_name", "In-Context")
 
-    html = build_html(
-        papers, window_label, industry=industry, spotlight=spotlight, name=name,
-    )
-    now = datetime.now(timezone.utc)
-    extra = f" + {len(industry)} industry" if industry else ""
-    subject = (
-        f"{CONFIG['email']['subject_prefix']} — {now.strftime('%b %d')} "
-        f"({len(papers)} papers{extra})"
-    )
+    # Daily-digest rule: only send when there is something new in the last 24h.
+    # A fully quiet day (no papers AND no industry) sends nothing — the email
+    # still renders "quiet day" for papers or "no industry updates" for either
+    # section when the OTHER has content. Seen-tracking runs regardless.
+    has_content = bool(papers) or bool(industry)
 
-    if args.dry_run:
-        Path("preview.html").write_text(html)
-        print(f"[dry-run] {subject}\n[dry-run] wrote preview.html")
+    if has_content:
+        html = build_html(
+            papers, window_label, industry=industry, spotlight=spotlight, name=name,
+        )
+        now = datetime.now(timezone.utc)
+        extra = f" + {len(industry)} industry" if industry else ""
+        subject = (
+            f"{CONFIG['email']['subject_prefix']} — {now.strftime('%b %d')} "
+            f"({len(papers)} papers{extra})"
+        )
+        if args.dry_run:
+            Path("preview.html").write_text(html)
+            print(f"[dry-run] {subject}\n[dry-run] wrote preview.html")
+        else:
+            send(html, subject, CONFIG["email"]["smtp_host"], CONFIG["email"]["smtp_port"])
+            print(f"Email sent: {subject}")
     else:
-        send(html, subject, CONFIG["email"]["smtp_host"], CONFIG["email"]["smtp_port"])
-        print(f"Email sent: {subject}")
+        print("Quiet day: no papers and no industry news in the last 24h — no email sent.")
 
     # Mark every fetched candidate as seen so nothing is re-triaged tomorrow.
     seen = state.load_seen()
