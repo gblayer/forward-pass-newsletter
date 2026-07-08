@@ -297,3 +297,4 @@ email:
 run:
   lookback_hours: 26        # daily window (26h = safety overlap; dedup handles it)
   first_run_lookback_days: 7
+  send_weekdays: [0, 1, 2, 3]   # only email Mon-Thu (0=Mon .. 6=Sun); skip Fri-Sun

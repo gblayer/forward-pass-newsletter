@@ -89,12 +89,14 @@ def main() -> int:
     # still renders "quiet day" for papers or "no industry updates" for either
     # section when the OTHER has content. Seen-tracking runs regardless.
     has_content = bool(papers) or bool(industry)
+    now = datetime.now(timezone.utc)
+    send_weekdays = CONFIG["run"].get("send_weekdays", [0, 1, 2, 3, 4])
+    day_ok = now.weekday() in send_weekdays
 
-    if has_content:
+    if has_content and day_ok:
         html = build_html(
             papers, window_label, industry=industry, spotlight=spotlight, name=name,
         )
-        now = datetime.now(timezone.utc)
         extra = f" + {len(industry)} industry" if industry else ""
         subject = (
             f"{CONFIG['email']['subject_prefix']} — {now.strftime('%b %d')} "
@@ -106,6 +108,9 @@ def main() -> int:
         else:
             send(html, subject, CONFIG["email"]["smtp_host"], CONFIG["email"]["smtp_port"])
             print(f"Email sent: {subject}")
+    elif not day_ok:
+        print(f"{now.strftime('%A')} is not a configured send day "
+              f"(run.send_weekdays = {send_weekdays}) — no email sent.")
     else:
         print("Quiet day: no papers and no industry news in the last 24h — no email sent.")
 
