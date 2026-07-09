@@ -109,9 +109,8 @@ def build_html(
     spotlight: dict | None = None,
     name: str = "Forward Pass",
 ) -> str:
-    n = len(papers)
     if papers:
-        subtitle = f"Your daily digest of the top {n} paper{'s' if n != 1 else ''} in tabular AI"
+        subtitle = "Your daily digest of the top papers in tabular AI"
         academic_block = _section_header("📄 Academic — new papers") + "".join(
             _paper_html(p) for p in papers
         )
