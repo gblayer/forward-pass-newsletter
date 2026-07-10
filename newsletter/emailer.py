@@ -29,11 +29,8 @@ SOURCE_BADGE = {
 def _paper_html(p: Paper) -> str:
     badge, color = SOURCE_BADGE.get(p.source, (p.source, "#666"))
     b = p.bullets or {}
-    via = ""
-    if p.matched_author:
-        via = f'<span style="color:#888;font-size:12px;"> · via author watch: {p.matched_author}</span>'
-    elif p.matched_keyword and p.matched_keyword.startswith("cites"):
-        via = f'<span style="color:#888;font-size:12px;"> · {p.matched_keyword}</span>'
+    # Internal metadata (relevance score, author-watch/keyword match) is NOT
+    # shown in the email — it goes in the routine's chat summary instead.
     version_note = ' <span style="color:#888;font-size:12px;">(updated version)</span>' if p.is_new_version else ""
     # Results sits between method and limitations; rendered only when present
     # so older/thin digests degrade gracefully.
@@ -43,7 +40,6 @@ def _paper_html(p: Paper) -> str:
       <div style="margin-bottom:6px;">
         <span style="background:{color};color:#fff;border-radius:3px;padding:1px 6px;
                      font-size:11px;vertical-align:middle;">{badge}</span>
-        <span style="color:#888;font-size:12px;"> score {p.relevance_score}/10</span>{via}
       </div>
       <a href="{p.url}" style="font-size:16px;font-weight:600;color:#1a1a1a;
          text-decoration:none;">{p.title}</a>{version_note}
@@ -93,16 +89,36 @@ def _industry_html(items: list[dict]) -> str:
 
 
 def _spotlight_html(spotlight: dict) -> str:
+    """Top 'In brief' box: bullet summaries for Academia + Industry.
+    Falls back to a legacy prose `body` if bullet arrays aren't present."""
     theme = (spotlight.get("theme") or "").strip()
+    academia = [str(x).strip() for x in (spotlight.get("academia") or []) if str(x).strip()]
+    industry = [str(x).strip() for x in (spotlight.get("industry") or []) if str(x).strip()]
     body = (spotlight.get("body") or "").strip()
-    if not body:
+
+    def _sub(label: str, items: list[str]) -> str:
+        if not items:
+            return ""
+        lis = "".join(f'<li style="margin-bottom:3px;">{i}</li>' for i in items)
+        return (
+            f'<div style="font-weight:600;font-size:13px;color:#1a1a1a;margin:8px 0 2px;">{label}</div>'
+            f'<ul style="margin:0 0 6px;padding-left:18px;font-size:14px;line-height:1.5;color:#333;">{lis}</ul>'
+        )
+
+    if academia or industry:
+        inner = _sub("Academia", academia) + _sub("Industry", industry)
+    elif body:
+        inner = f'<div style="font-size:14px;line-height:1.55;color:#333;">{body}</div>'
+    else:
         return ""
+
+    theme_label = f' · {theme}' if theme else ""
     return f"""
-    <div style="margin:32px 0;padding:16px 18px;background:#f6f8fa;border-radius:6px;
+    <div style="margin:24px 0 32px;padding:16px 18px;background:#f6f8fa;border-radius:6px;
                 border-left:4px solid #6741D9;">
       <div style="font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:#6741D9;
-                  font-weight:600;margin-bottom:6px;">🔬 Spotlight · {theme}</div>
-      <div style="font-size:14px;line-height:1.55;color:#333;">{body}</div>
+                  font-weight:600;margin-bottom:2px;">🔎 In brief{theme_label}</div>
+      {inner}
     </div>"""
 
 

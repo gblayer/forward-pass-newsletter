@@ -61,10 +61,12 @@ no questions. Steps:
    main empirical/quantitative finding — key numbers, what beat what;
    prefix "Likely:" if inferred), limitations (honest; prefix "Likely:" if
    inferred rather than stated in the abstract). Plain language, no hype,
-   max ~40 words per field. Publish ALL papers that score >= 6 even if
-   there are fewer than 10; only cap at the 10 highest if more. I know the
-   field (TabPFN, tabular ICL, LLM embeddings, relational FMs, neural
-   processes) — be precise, not vague.
+   max ~40 words per field. For each paper you keep, FETCH its arXiv page
+   (and the PDF/HTML if needed) and read BEYOND THE ABSTRACT so results and
+   limitations are accurate and specific — do not rely on the abstract
+   alone. Publish ALL papers that score >= 6 even if there are fewer than
+   10; only cap at the 10 highest if more. I know the field (TabPFN, tabular
+   ICL, LLM embeddings, relational FMs, neural processes) — be precise.
 
 4. INDUSTRY NEWS (config.yaml -> industry_watch). Web-search for news about
    the listed companies' tabular-FM work: model releases, papers, funding,
@@ -75,11 +77,12 @@ no questions. Steps:
    FMs / tabular ML / relational FMs / neural processes. Verify each against
    a real dated URL — do NOT pad with older items or "context". Else use [].
 
-5. SPOTLIGHT (config.yaml -> spotlight). Pick the one theme best supported
-   by this issue's papers + industry news, and write a few concise
-   sentences (<= ~90 words) on the current status of tabular foundation
-   models in that vertical, grounded in this week's material. If there is
-   too little to say, omit it.
+5. IN BRIEF (config.yaml -> spotlight). A scannable top summary as bullets:
+   `academia` = 2-4 short one-line bullets on today's key papers/themes;
+   `industry` = 1-3 short one-line bullets on today's key news. Optionally a
+   short `theme` label. Concrete, no hype. Base it ONLY on this issue's
+   material (today's papers + today's industry). Omit a side that has
+   nothing; omit the whole block if there's nothing to say.
 
 6. Write digest.json in the repo root:
    {"window_label": "<from candidates.json>",
@@ -87,7 +90,7 @@ no questions. Steps:
                 matched_author, matched_keyword, is_new_version,
                 bullets: {problem, method, results, limitations}}],
     "industry": [{company, headline, date, url, summary}],   // [] if none
-    "spotlight": {theme, body}}                               // omit if none
+    "spotlight": {theme, academia: [..bullets..], industry: [..bullets..]}} // omit if none
    Copy id/title/authors/url/source/matched_* fields verbatim from
    candidates.json. If NO paper scores >= 6, still write digest.json (empty
    papers list) — the industry/spotlight sections may still carry the issue.
@@ -101,6 +104,10 @@ no questions. Steps:
 8. Commit and push seen_papers.json to the default branch with message
    "chore: update seen papers". Do NOT commit candidates.json or
    digest.json.
+
+In your final chat summary (NOT the email), list each kept paper with its
+0-10 relevance score and flag any author-watch matches — those internal
+details are for me in the chat, and must NOT appear in the email itself.
 
 If a fetch source fails, proceed with whatever candidates you have. If a
 web search for industry news fails, proceed with an empty industry list.
