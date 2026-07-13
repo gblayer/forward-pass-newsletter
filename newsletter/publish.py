@@ -85,12 +85,23 @@ def _rss_xml(items: list[dict], base_url: str, title: str, subtitle: str) -> str
     )
 
 
-def _index_html(items: list[dict], base_url: str, title: str, subtitle: str) -> str:
+def _cf_beacon(token: str) -> str:
+    """Cloudflare Web Analytics beacon (privacy-first, no cookies). Empty if unset."""
+    if not token:
+        return ""
+    return (
+        '<script defer src="https://static.cloudflareinsights.com/beacon.min.js" '
+        f'data-cf-beacon=\'{{"token": "{token}"}}\'></script>'
+    )
+
+
+def _index_html(items: list[dict], base_url: str, title: str, subtitle: str,
+                cf_token: str = "") -> str:
     b = base_url.rstrip("/")
     feed = f"{b}/rss.xml"
-    # Feedly needs the feed URL percent-encoded as a single path segment,
-    # otherwise the "//" collapses and Feedly reports "feed not found".
-    feedly = f"https://feedly.com/i/subscription/feed/{quote(feed, safe='')}"
+    enc = quote(feed, safe="")  # percent-encoded feed URL for one-click links
+    feedly = f"https://feedly.com/i/subscription/feed/{enc}"
+    inoreader = f"https://www.inoreader.com/?add_feed={enc}"
     rows = []
     for it in items:
         rows.append(
@@ -112,7 +123,8 @@ def _index_html(items: list[dict], base_url: str, title: str, subtitle: str) -> 
         '<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700'
         '&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" '
         'rel="stylesheet">'
-        '<style>body{margin:0;padding:0;}a:hover{opacity:.75;}</style></head>'
+        '<style>body{margin:0;padding:0;}a:hover{opacity:.75;}</style>'
+        f'{_cf_beacon(cf_token)}</head>'
         f'<body style="margin:0;padding:32px 12px;background:{DESK};">'
         f'<div style="max-width:640px;margin:0 auto;background:{PAPER};border:1.5px solid {INK};">'
         f'<div style="background:{INK};color:{PAPER};padding:26px 40px 30px;">'
@@ -125,17 +137,26 @@ def _index_html(items: list[dict], base_url: str, title: str, subtitle: str) -> 
         f'<p style="margin:14px 0 0;font-family:{SANS};font-size:13px;color:#c3c0b4;">{escape(subtitle)}</p>'
         f'</div>'
         f'<div style="padding:30px 40px 40px;">'
-        # subscribe box
+        # subscribe box (reader-agnostic: the feed URL works in any RSS reader)
         f'<div style="border:1.5px solid {ACCENT};background:rgba(59,56,245,0.06);padding:18px 20px;margin-bottom:34px;">'
         f'<div style="font-family:{MONO};font-size:11px;font-weight:600;letter-spacing:.1em;'
         f'text-transform:uppercase;color:{ACCENT};margin-bottom:8px;">Subscribe &middot; free</div>'
         f'<div style="font-family:{SANS};font-size:14px;color:{INK};line-height:1.5;">'
-        f'Add the feed to your reader &mdash; unsubscribe anytime by removing it.</div>'
-        f'<div style="margin-top:10px;font-family:{MONO};font-size:12.5px;color:{INK};word-break:break-all;">'
+        f'Get every issue in your RSS reader. Copy this feed URL into any reader:</div>'
+        f'<div style="margin-top:8px;padding:9px 11px;background:#fff;border:1px solid #cfcdc2;'
+        f'font-family:{MONO};font-size:12.5px;color:{INK};word-break:break-all;">'
         f'<a href="{escape(feed)}" style="color:{ACCENT};">{escape(feed)}</a></div>'
-        f'<div style="margin-top:12px;"><a href="{escape(feedly)}" '
-        f'style="display:inline-block;background:{ACCENT};color:#fff;font-family:{MONO};font-size:12px;'
-        f'font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:8px 14px;">Subscribe on Feedly</a></div>'
+        f'<div style="margin-top:12px;">'
+        f'<a href="{escape(feedly)}" style="display:inline-block;background:{ACCENT};color:#fff;'
+        f'font-family:{MONO};font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;'
+        f'padding:8px 13px;margin:0 6px 6px 0;">+ Feedly</a>'
+        f'<a href="{escape(inoreader)}" style="display:inline-block;background:{ACCENT};color:#fff;'
+        f'font-family:{MONO};font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;'
+        f'padding:8px 13px;margin:0 6px 6px 0;">+ Inoreader</a>'
+        f'</div>'
+        f'<div style="margin-top:8px;font-family:{SANS};font-size:12.5px;color:{MUTED};line-height:1.5;">'
+        f'New to RSS? A reader (Feedly, Inoreader, NetNewsWire, Thunderbird&hellip;) gathers newsletters in '
+        f'one place. Paste the URL above into yours &mdash; unsubscribe anytime by removing the feed.</div>'
         f'</div>'
         # archive
         f'<div style="font-family:{MONO};font-size:11.5px;font-weight:600;letter-spacing:.16em;'
@@ -150,6 +171,7 @@ def publish(papers: list[Paper], window_label: str, industry: list[dict],
     """Write the web issue, refresh the archive + RSS feed. Returns the issue URL."""
     site = config.get("site", {})
     base_url = (site.get("base_url") or "").rstrip("/")
+    cf_token = site.get("cf_analytics_token") or ""
     name = config["email"].get("newsletter_name", "Forward Pass")
     subtitle = "Your daily digest of the top papers in tabular AI."
 
@@ -164,6 +186,9 @@ def publish(papers: list[Paper], window_label: str, industry: list[dict],
         papers, window_label, industry=industry, spotlight=spotlight, name=name,
         extra_top_html=_nav_html(base_url),
     )
+    beacon = _cf_beacon(cf_token)
+    if beacon:
+        issue_html = issue_html.replace("</head>", beacon + "</head>", 1)
     rel_path = f"issues/issue-{issue_no}.html"
     (DOCS / rel_path).write_text(issue_html)
 
@@ -181,7 +206,7 @@ def publish(papers: list[Paper], window_label: str, industry: list[dict],
     items.sort(key=lambda x: x["number"], reverse=True)
     MANIFEST.write_text(json.dumps(items, indent=1))
 
-    (DOCS / "index.html").write_text(_index_html(items, base_url, name, subtitle))
+    (DOCS / "index.html").write_text(_index_html(items, base_url, name, subtitle, cf_token))
     (DOCS / "rss.xml").write_text(_rss_xml(items, base_url, name, subtitle))
 
     return f"{base_url}/{rel_path}"
