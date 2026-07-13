@@ -90,7 +90,7 @@ def _cf_beacon(token: str) -> str:
     if not token:
         return ""
     return (
-        '<script defer src="https://static.cloudflareinsights.com/beacon.min.js" '
+        '<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" '
         f'data-cf-beacon=\'{{"token": "{token}"}}\'></script>'
     )
 

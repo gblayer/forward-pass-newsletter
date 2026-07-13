@@ -306,7 +306,7 @@ site:
   # Cloudflare Web Analytics beacon token (free, privacy-first). Paste the
   # token from dash.cloudflare.com -> Analytics -> Web Analytics; leave "" to
   # disable. When set, the site pages report readership to Cloudflare.
-  cf_analytics_token: ""
+  cf_analytics_token: "61c3fc60cc1e4d2684fef3c2a75d7206"
 
 email:
   smtp_host: smtp.gmail.com
