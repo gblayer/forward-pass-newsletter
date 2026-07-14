@@ -1,1 +1,10 @@
-[]
+[
+ {
+  "number": 5,
+  "date": "2026-07-14",
+  "iso": "2026-07-14T07:44:15.084896+00:00",
+  "title": "Forward Pass \u2014 Issue 5 (Jul 14, 2026)",
+  "path": "issues/issue-5.html",
+  "summary": "4 papers \u2014 Graph foundation models are borrowing tabular ICL backbones: GTAlign aligns graph structure to a TabPFNv2.5/LimiX-16M input format for in-context node/graph classification."
+ }
+]
