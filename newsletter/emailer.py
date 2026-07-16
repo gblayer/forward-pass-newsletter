@@ -33,10 +33,10 @@ from .models import Paper
 # Set these once to calibrate the running counter, then it advances by 1 on
 # every publishing day — no state file, deterministic, dry-run safe.
 # ISSUE_EPOCH = the date of the issue numbered ISSUE_START.
-# WEEKLY cadence since 2026-07-20: issues 1-5 were daily (Jul 8-14); the
-# first weekly issue, Monday 2026-07-20, is issue #6, advancing each Monday.
+# WEEKLY cadence since 2026-07-20: issues 1-7 were daily (Jul 8-16); the
+# first weekly issue, Monday 2026-07-20, is issue #8, advancing each Monday.
 ISSUE_EPOCH = date(2026, 7, 20)
-ISSUE_START = 6
+ISSUE_START = 8
 SEND_WEEKDAYS = {0}  # Mondays only (mirror config.yaml run.send_weekdays)
 
 
