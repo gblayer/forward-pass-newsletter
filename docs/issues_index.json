@@ -1,5 +1,13 @@
 [
  {
+  "number": 9,
+  "date": "2026-07-27",
+  "iso": "2026-07-27T08:08:54.539305+00:00",
+  "title": "Forward Pass \u2014 Issue 9 (Jul 27, 2026)",
+  "path": "issues/issue-9.html",
+  "summary": "9 papers \u2014 TabPFN's internal representation topology (persistent homology) tracks when its in-context predictions become unreliable."
+ },
+ {
   "number": 8,
   "date": "2026-07-20",
   "iso": "2026-07-20T07:49:36.013463+00:00",
