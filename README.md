@@ -1,11 +1,36 @@
-# ⏩ Forward Pass — weekly tabular-AI newsletter
+<p align="center">
+  <img src="assets/banner.svg" alt="Forward Pass — weekly tabular-AI newsletter" width="100%">
+</p>
 
-A weekly digest of the top papers on tabular foundation models —
-delivered every Monday morning, zero servers to maintain.
+<p align="center">
+  📬 <a href="https://gblayer.github.io/forward-pass-newsletter/"><b>Subscribe</b></a>
+  &nbsp;·&nbsp; <a href="https://gblayer.github.io/forward-pass-newsletter/rss.xml">RSS feed</a>
+  &nbsp;·&nbsp; <a href="https://gblayer.github.io/forward-pass-newsletter/">Archive</a>
+</p>
 
-### 📬 [**Subscribe (web + RSS)**](https://gblayer.github.io/forward-pass-newsletter/) &nbsp;·&nbsp; [RSS feed](https://gblayer.github.io/forward-pass-newsletter/rss.xml) &nbsp;·&nbsp; [Read the archive](https://gblayer.github.io/forward-pass-newsletter/)
+## About
 
-Free at any scale — add the RSS feed to your reader; unsubscribe by removing it.
+**Forward Pass** is an automated **weekly** digest of the most relevant new
+papers on **tabular foundation models** and the intersection of language models
+and structured data — TabPFN / TabICL and tabular in-context learning, relational
+& multi-table foundation models, neural processes, LLM embeddings for tables,
+benchmarks, and the industry moves around them.
+
+Every **Monday** it sweeps the previous week's arXiv + HuggingFace, scores every
+candidate against a research topic profile, reads the top ~10 papers, and writes
+a short **problem → method → results → limitations** digest for each — plus a
+"this week in industry" section and a one-line **In brief** summary. It runs
+autonomously as a Claude Code routine — no servers, no API keys — delivered by
+email and published to the web, free at any scale.
+
+### What's at [gblayer.github.io/forward-pass-newsletter](https://gblayer.github.io/forward-pass-newsletter/)?
+
+The newsletter's free public home — no signup, unsubscribe anytime:
+
+- 🗂️ **Archive** — every issue as its own web page, newest first.
+- 📡 **Subscribe box** — copy the RSS feed URL into any reader (Inoreader,
+  NetNewsWire, Thunderbird, …); unsubscribe by removing the feed.
+- 🔗 **RSS feed** (`/rss.xml`) — new issues arrive in your reader automatically.
 
 ## How it works
 
@@ -93,11 +118,10 @@ open preview.html
   Haiku scores ~50–200 abstracts in batches, Sonnet writes ≤12 summaries.
 - arXiv / HF / OpenReview APIs: free.
 
-## Ideas for later (good Claude Code tasks)
+---
 
-- Weekly "digest of digests" every Monday summarizing the week's themes.
-- Google Scholar alerts → Gmail ingestion (Scholar has no API, but you
-  can parse its alert emails via the Gmail API as an extra source).
-- A `/rate` reply loop: forward feedback to a file that gets appended to
-  the topic profile ("more like this / less like this").
-- Push top papers into a Zotero collection via the Zotero API.
+<p align="center">
+  <img src="assets/logo.svg" alt="Forward Pass" width="120">
+  <br>
+  <sub><b>⏩ Forward Pass</b> — a Claude Code routine. Built weekly, read anywhere.</sub>
+</p>

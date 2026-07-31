@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320" role="img" aria-label="Forward Pass — weekly tabular AI newsletter">
+  <rect width="1280" height="320" fill="#17160f"/>
+  <text x="64" y="92" font-family="'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace" font-size="22" font-weight="500" letter-spacing="7" fill="#8f8c80">WEEKLY &#183; TABULAR AI</text>
+  <text x="58" y="208" font-family="'Space Grotesk','Helvetica Neue',Arial,sans-serif" font-size="100" font-weight="700" letter-spacing="-3">
+    <tspan fill="#3b38f5">&#187;</tspan><tspan fill="#f6f5f0">FORWARD PASS</tspan><tspan fill="#ff5a1f">.</tspan>
+  </text>
+  <text x="64" y="264" font-family="'IBM Plex Sans',-apple-system,'Segoe UI',Arial,sans-serif" font-size="24" fill="#c3c0b4">Your weekly digest of the top papers in tabular AI.</text>
+</svg>
