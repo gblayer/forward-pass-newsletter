@@ -1,5 +1,13 @@
 [
  {
+  "number": 11,
+  "date": "2026-08-13",
+  "iso": "2026-08-13T21:45:38.253377+00:00",
+  "title": "Forward Pass \u2014 Issue 11 (Aug 13, 2026)",
+  "path": "issues/issue-11.html",
+  "summary": "10 papers, 1 industry update \u2014 Two papers probe TFM reliability from opposite ends: TabPFN/TabICL/TabDPT all fail basic Bayesian self-consistency checks, while frontier LLMs uniquely lose accuracy as tabular input dimensionality grows."
+ },
+ {
   "number": 10,
   "date": "2026-08-03",
   "iso": "2026-08-03T07:48:22.259972+00:00",
