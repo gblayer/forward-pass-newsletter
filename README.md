@@ -104,7 +104,7 @@ Everything lives in `config.yaml`:
 
 ## Email subscribers (Resend Audiences + Cloudflare Worker)
 
-The site's subscribe form stores signups in a **Resend Audience**; each email
+The site's subscribe form stores signups in **Resend** (its contact list); each email
 carries a per-recipient **one-click unsubscribe** link (RFC 8058 headers, so
 Gmail/Yahoo show their native inbox Unsubscribe button). GitHub Pages is
 static, so a tiny **Cloudflare Worker** (`infra/subscribe-worker.js`) relays
@@ -112,18 +112,18 @@ the form to Resend without exposing the API key. Free up to 1,000 contacts.
 
 One-time setup:
 
-1. **Resend** ([resend.com](https://resend.com)): create an account → API key
-   → Audiences → create one → copy its **Audience ID**.
+1. **Resend** ([resend.com](https://resend.com)): create an account → API key.
+   Contacts live at the account level (`/contacts`) — no audience ID needed.
 2. **Cloudflare** ([dash.cloudflare.com](https://dash.cloudflare.com), free):
    Workers → Create → paste `infra/subscribe-worker.js`. Under the Worker's
-   *Settings → Variables and Secrets* add: `RESEND_API_KEY`,
-   `RESEND_AUDIENCE_ID`, `UNSUB_SECRET` (any long random string) as secrets,
-   and `ALLOWED_ORIGIN` = `https://gblayer.github.io` as a variable. Deploy
+   *Settings → Variables and Secrets* add: `RESEND_API_KEY` and
+   `UNSUB_SECRET` (any long random string) as secrets, and
+   `ALLOWED_ORIGIN` = `https://gblayer.github.io` as a variable. Deploy
    and copy the `*.workers.dev` URL.
 3. **config.yaml**: set `site.subscribe_endpoint` to that Worker URL.
 4. **Send-time env** (routine environment / CI secrets): add the same
-   `RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, and `UNSUB_SECRET` so the sender
-   can read the audience and sign unsubscribe links.
+   `RESEND_API_KEY` and `UNSUB_SECRET` so the sender can read the contact
+   list and sign unsubscribe links.
 
 Delivery still goes through your existing transport (Gmail API / SMTP);
 Resend only stores the list. Subscribers merge with `NEWSLETTER_TO`, deduped.

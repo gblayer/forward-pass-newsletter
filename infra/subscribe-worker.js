@@ -14,11 +14,13 @@
  *
  * Deploy: Cloudflare dashboard → Workers → Create → paste this file.
  * Settings → Variables and Secrets:
- *   RESEND_API_KEY     (secret)  Resend API key
- *   RESEND_AUDIENCE_ID (secret)  the Audience UUID
- *   UNSUB_SECRET       (secret)  any long random string; MUST equal the
- *                                UNSUB_SECRET env var of the newsletter run
- *   ALLOWED_ORIGIN     (var)     https://gblayer.github.io
+ *   RESEND_API_KEY (secret)  Resend API key
+ *   UNSUB_SECRET   (secret)  any long random string; MUST equal the
+ *                            UNSUB_SECRET env var of the newsletter run
+ *   ALLOWED_ORIGIN (var)     https://gblayer.github.io
+ *
+ * Contacts use Resend's account-level API (POST/PATCH /contacts) — the
+ * older audience-scoped endpoints are gone from new Resend accounts.
  */
 
 const RESEND = "https://api.resend.com";
@@ -77,13 +79,12 @@ async function subscribe(req, env) {
   }
   if (!EMAIL_RE.test(email)) return json({ ok: false, error: "invalid email" }, 400, env);
 
-  const aud = env.RESEND_AUDIENCE_ID;
-  const create = await resend(env, "POST", `/audiences/${aud}/contacts`,
+  const create = await resend(env, "POST", "/contacts",
     { email, unsubscribed: false });
   if (create.ok) return json({ ok: true }, 200, env);
 
   // Already a contact (e.g. previously unsubscribed) → flip it back on.
-  const update = await resend(env, "PATCH", `/audiences/${aud}/contacts/${email}`,
+  const update = await resend(env, "PATCH", `/contacts/${email}`,
     { unsubscribed: false });
   if (update.ok) return json({ ok: true }, 200, env);
 
@@ -100,8 +101,7 @@ async function unsubscribe(req, env, url) {
     return new Response("Invalid unsubscribe link.", { status: 400, headers: cors(env) });
   }
 
-  await resend(env, "PATCH",
-    `/audiences/${env.RESEND_AUDIENCE_ID}/contacts/${email}`, { unsubscribed: true });
+  await resend(env, "PATCH", `/contacts/${email}`, { unsubscribed: true });
 
   // One-click (RFC 8058) POSTs from the inbox expect a bare 200.
   if (req.method === "POST") return new Response("OK", { status: 200, headers: cors(env) });
