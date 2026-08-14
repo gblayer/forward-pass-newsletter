@@ -88,7 +88,14 @@ async function subscribe(req, env) {
     { unsubscribed: false });
   if (update.ok) return json({ ok: true }, 200, env);
 
-  return json({ ok: false, error: "could not subscribe, try again later" }, 502, env);
+  // Surface Resend's own error so misconfigurations (e.g. an API key
+  // without Full access) are diagnosable instead of a blind 502.
+  const detail = await create.text().catch(() => "");
+  return json({
+    ok: false,
+    error: "could not subscribe, try again later",
+    detail: `resend ${create.status}: ${detail.slice(0, 300)}`,
+  }, 502, env);
 }
 
 async function unsubscribe(req, env, url) {
