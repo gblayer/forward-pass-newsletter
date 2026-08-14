@@ -129,7 +129,7 @@ async function sendWelcome(env, email, origin) {
                         text-transform:uppercase;color:#f6f5f0;">
              <span style="color:#3b38f5;">&raquo;</span>FP<span style="color:#ff5a1f;">.</span></span>
            <div style="margin-top:10px;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;
-                       color:#8f8c80;">This content is AI-assisted.</div>
+                       color:#8f8c80;">AI-assisted &mdash; it can make mistakes; check the linked papers.</div>
            <div style="margin-top:6px;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;
                        color:#8f8c80;">New issue every Monday &middot;
              <a href="${unsubUrl}" style="color:#8f8c80;text-decoration:underline;">Unsubscribe</a></div>
@@ -234,7 +234,7 @@ export default {
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(env) });
     // Deploy marker: lets the repo owner verify which build is live.
     if (url.pathname === "/version") {
-      return json({ version: 4, welcome: true, gmail: !!env.GMAIL_REFRESH_TOKEN }, 200, env);
+      return json({ version: 5, welcome: true, gmail: !!env.GMAIL_REFRESH_TOKEN }, 200, env);
     }
     if (url.pathname === "/subscribe" && req.method === "POST") return subscribe(req, env, url);
     if (url.pathname === "/unsubscribe") return unsubscribe(req, env, url);
