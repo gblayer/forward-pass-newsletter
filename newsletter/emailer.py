@@ -340,7 +340,8 @@ def build_html(
         <span style="color:{ACCENT};">&raquo;</span>FP<span style="color:{ACCENT2};">.</span>
       </span>
       <div style="margin-top:14px;font-family:{MONO};font-size:10.5px;letter-spacing:.05em;
-                  color:{MUTED_LT};">AI-assisted &mdash; it can make mistakes; check the linked papers.</div>
+                  color:{MUTED_LT};">Forward Pass is an AI-assisted newsletter and therefore it can
+                  make mistakes. Check the linked papers.</div>
       {unsub_line}
     </div>"""
 
