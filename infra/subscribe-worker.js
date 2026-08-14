@@ -227,6 +227,10 @@ export default {
   async fetch(req, env) {
     const url = new URL(req.url);
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(env) });
+    // Deploy marker: lets the repo owner verify which build is live.
+    if (url.pathname === "/version") {
+      return json({ version: 3, welcome: true, gmail: !!env.GMAIL_REFRESH_TOKEN }, 200, env);
+    }
     if (url.pathname === "/subscribe" && req.method === "POST") return subscribe(req, env, url);
     if (url.pathname === "/unsubscribe") return unsubscribe(req, env, url);
     return new Response("Not found", { status: 404, headers: cors(env) });

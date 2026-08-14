@@ -111,8 +111,11 @@ document.getElementById('fpSub').addEventListener('submit', async function (ev) 
     });
     var j = await r.json();
     if (j.ok) {
+      var d = new Date();
+      d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7));
+      var label = d.toLocaleDateString('en-US', {month: 'long', day: 'numeric'});
       msg.style.color = '#3b38f5';
-      msg.textContent = "You're in \\u2014 next issue lands Monday.";
+      msg.textContent = "You're in \\u2014 next issue lands Monday, " + label + ".";
       document.getElementById('fpSub').reset();
     } else {
       msg.style.color = '#ff5a1f';
@@ -135,9 +138,6 @@ def _subscribe_box(feed: str, inoreader: str, subscribe_endpoint: str) -> str:
             f'<div style="border:1.5px solid {ACCENT};background:rgba(59,56,245,0.06);padding:18px 20px;margin-bottom:34px;">'
             f'<div style="font-family:{MONO};font-size:11px;font-weight:600;letter-spacing:.1em;'
             f'text-transform:uppercase;color:{ACCENT};margin-bottom:8px;">Subscribe &middot; free &middot; every Monday</div>'
-            f'<div style="font-family:{SANS};font-size:14px;color:{INK};line-height:1.5;">'
-            f'The week&rsquo;s top papers on tabular AI, explained in plain language &mdash; '
-            f'in your inbox every Monday.</div>'
             f'<form id="fpSub" style="margin-top:12px;display:flex;gap:8px;">'
             f'<input id="fpEmail" type="email" required placeholder="you@email.com" '
             f'style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid {INK};background:#fff;'
