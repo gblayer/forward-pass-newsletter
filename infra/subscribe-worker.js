@@ -72,11 +72,15 @@ async function resend(env, method, path, body) {
   });
 }
 
-function b64urlEncode(str) {
+function b64Std(str) {
   const bytes = new TextEncoder().encode(str);
   let bin = "";
   for (const b of bytes) bin += String.fromCharCode(b);
-  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return btoa(bin);
+}
+
+function b64urlEncode(str) {
+  return b64Std(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 /** Welcome email, sent via the same Gmail account as the newsletter.
@@ -113,8 +117,7 @@ async function sendWelcome(env, email, origin) {
          <div style="padding:28px 32px;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
                      font-size:15px;line-height:1.6;color:#3f3d33;">
            <p style="margin:0 0 12px;"><b>You're in — thanks for subscribing.</b></p>
-           <p style="margin:0 0 12px;">Every Monday you'll get the week's top papers on tabular AI,
-              explained in plain language: problem, method, results, limitations.</p>
+           <p style="margin:0 0 12px;">Every Monday you'll get the week's top papers on tabular AI.</p>
            <p style="margin:0 0 18px;">Until then, catch up on what you've missed:</p>
            <a href="${site}/" style="display:inline-block;background:#3b38f5;color:#fff;
               font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:600;
@@ -136,7 +139,9 @@ async function sendWelcome(env, email, origin) {
     const raw = [
       `From: Forward Pass <${env.SMTP_USER}>`,
       `To: ${email}`,
-      "Subject: Welcome to Forward Pass — see you Monday",
+      // RFC 2047 encoded-word: header charsets are separate from the body's,
+      // so a bare UTF-8 em-dash here renders as mojibake in Gmail.
+      `Subject: =?UTF-8?B?${b64Std("Welcome to Forward Pass — see you Monday")}?=`,
       `List-Unsubscribe: <${unsubUrl}>, <mailto:${env.SMTP_USER}?subject=unsubscribe>`,
       "List-Unsubscribe-Post: List-Unsubscribe=One-Click",
       "MIME-Version: 1.0",
@@ -229,7 +234,7 @@ export default {
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(env) });
     // Deploy marker: lets the repo owner verify which build is live.
     if (url.pathname === "/version") {
-      return json({ version: 3, welcome: true, gmail: !!env.GMAIL_REFRESH_TOKEN }, 200, env);
+      return json({ version: 4, welcome: true, gmail: !!env.GMAIL_REFRESH_TOKEN }, 200, env);
     }
     if (url.pathname === "/subscribe" && req.method === "POST") return subscribe(req, env, url);
     if (url.pathname === "/unsubscribe") return unsubscribe(req, env, url);
