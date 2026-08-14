@@ -18,6 +18,10 @@
  *   UNSUB_SECRET   (secret)  any long random string; MUST equal the
  *                            UNSUB_SECRET env var of the newsletter run
  *   ALLOWED_ORIGIN (var)     https://gblayer.github.io
+ * Optional — enables the instant welcome email (sent via the same Gmail
+ * account as the newsletter; skipped silently when absent):
+ *   GMAIL_CLIENT_ID / GMAIL_CLIENT_SECRET / GMAIL_REFRESH_TOKEN (secrets)
+ *   SMTP_USER (var)  the Gmail from-address
  *
  * Contacts use Resend's account-level API (POST/PATCH /contacts) — the
  * older audience-scoped endpoints are gone from new Resend accounts.
@@ -68,7 +72,87 @@ async function resend(env, method, path, body) {
   });
 }
 
-async function subscribe(req, env) {
+function b64urlEncode(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+/** Welcome email, sent via the same Gmail account as the newsletter.
+ *  Best-effort: any failure is swallowed — the signup itself already succeeded.
+ *  Requires the optional Worker secrets GMAIL_CLIENT_ID / GMAIL_CLIENT_SECRET /
+ *  GMAIL_REFRESH_TOKEN and the var SMTP_USER; silently skipped when absent. */
+async function sendWelcome(env, email, origin) {
+  if (!env.GMAIL_REFRESH_TOKEN || !env.SMTP_USER) return;
+  try {
+    const tok = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: env.GMAIL_CLIENT_ID,
+        client_secret: env.GMAIL_CLIENT_SECRET,
+        refresh_token: env.GMAIL_REFRESH_TOKEN,
+        grant_type: "refresh_token",
+      }),
+    });
+    if (!tok.ok) return;
+    const access = (await tok.json()).access_token;
+
+    const site = "https://gblayer.github.io/forward-pass-newsletter";
+    const unsubUrl =
+      `${origin}/unsubscribe?e=${b64urlEncode(email)}&t=${await hmacHex(env.UNSUB_SECRET, email)}`;
+    const html =
+      `<body style="margin:0;padding:32px 12px;background:#e7e4da;">
+       <div style="max-width:560px;margin:0 auto;background:#f6f5f0;border:1.5px solid #17160f;">
+         <div style="background:#17160f;padding:26px 32px;">
+           <h1 style="margin:0;font-family:'Helvetica Neue',Arial,sans-serif;font-weight:700;
+                      font-size:28px;letter-spacing:-.02em;text-transform:uppercase;color:#f6f5f0;">
+             <span style="color:#3b38f5;">&raquo;</span>Forward Pass<span style="color:#ff5a1f;">.</span></h1>
+         </div>
+         <div style="padding:28px 32px;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+                     font-size:15px;line-height:1.6;color:#3f3d33;">
+           <p style="margin:0 0 12px;"><b>You're in — thanks for subscribing.</b></p>
+           <p style="margin:0 0 12px;">Every Monday you'll get the week's top papers on tabular AI,
+              explained in plain language: problem, method, results, limitations.</p>
+           <p style="margin:0 0 18px;">Until then, catch up on what you've missed:</p>
+           <a href="${site}/" style="display:inline-block;background:#3b38f5;color:#fff;
+              font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:600;
+              letter-spacing:.05em;text-transform:uppercase;text-decoration:none;
+              padding:10px 16px;">Read past issues</a>
+         </div>
+         <div style="background:#17160f;padding:22px 32px;text-align:center;">
+           <span style="font-family:'Helvetica Neue',Arial,sans-serif;font-weight:700;font-size:20px;
+                        text-transform:uppercase;color:#f6f5f0;">
+             <span style="color:#3b38f5;">&raquo;</span>FP<span style="color:#ff5a1f;">.</span></span>
+           <div style="margin-top:10px;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;
+                       color:#8f8c80;">This content is AI-assisted.</div>
+           <div style="margin-top:6px;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;
+                       color:#8f8c80;">New issue every Monday &middot;
+             <a href="${unsubUrl}" style="color:#8f8c80;text-decoration:underline;">Unsubscribe</a></div>
+         </div>
+       </div></body>`;
+
+    const raw = [
+      `From: Forward Pass <${env.SMTP_USER}>`,
+      `To: ${email}`,
+      "Subject: Welcome to Forward Pass — see you Monday",
+      `List-Unsubscribe: <${unsubUrl}>, <mailto:${env.SMTP_USER}?subject=unsubscribe>`,
+      "List-Unsubscribe-Post: List-Unsubscribe=One-Click",
+      "MIME-Version: 1.0",
+      "Content-Type: text/html; charset=utf-8",
+      "",
+      html,
+    ].join("\r\n");
+    await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${access}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ raw: b64urlEncode(raw) }),
+    });
+  } catch { /* best-effort */ }
+}
+
+async function subscribe(req, env, url) {
   let email = "";
   const ct = req.headers.get("Content-Type") || "";
   if (ct.includes("application/json")) {
@@ -81,12 +165,24 @@ async function subscribe(req, env) {
 
   const create = await resend(env, "POST", "/contacts",
     { email, unsubscribed: false });
-  if (create.ok) return json({ ok: true }, 200, env);
+  if (create.ok) {
+    await sendWelcome(env, email, url.origin);  // brand-new subscriber
+    return json({ ok: true }, 200, env);
+  }
 
-  // Already a contact (e.g. previously unsubscribed) → flip it back on.
-  const update = await resend(env, "PATCH", `/contacts/${email}`,
-    { unsubscribed: false });
-  if (update.ok) return json({ ok: true }, 200, env);
+  // Already a contact: re-activate. Welcome them back only if they had
+  // actually unsubscribed — a duplicate form submission stays silent.
+  const lookup = await resend(env, "GET", `/contacts/${email}`);
+  if (lookup.ok) {
+    const contact = await lookup.json().catch(() => ({}));
+    const wasUnsubscribed = !!(contact.unsubscribed ?? contact.data?.unsubscribed);
+    const update = await resend(env, "PATCH", `/contacts/${email}`,
+      { unsubscribed: false });
+    if (update.ok) {
+      if (wasUnsubscribed) await sendWelcome(env, email, url.origin);
+      return json({ ok: true }, 200, env);
+    }
+  }
 
   // Surface Resend's own error so misconfigurations (e.g. an API key
   // without Full access) are diagnosable instead of a blind 502.
@@ -131,7 +227,7 @@ export default {
   async fetch(req, env) {
     const url = new URL(req.url);
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(env) });
-    if (url.pathname === "/subscribe" && req.method === "POST") return subscribe(req, env);
+    if (url.pathname === "/subscribe" && req.method === "POST") return subscribe(req, env, url);
     if (url.pathname === "/unsubscribe") return unsubscribe(req, env, url);
     return new Response("Not found", { status: 404, headers: cors(env) });
   },

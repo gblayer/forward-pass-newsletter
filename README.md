@@ -118,8 +118,11 @@ One-time setup:
    Workers → Create → paste `infra/subscribe-worker.js`. Under the Worker's
    *Settings → Variables and Secrets* add: `RESEND_API_KEY` and
    `UNSUB_SECRET` (any long random string) as secrets, and
-   `ALLOWED_ORIGIN` = `https://gblayer.github.io` as a variable. Deploy
-   and copy the `*.workers.dev` URL.
+   `ALLOWED_ORIGIN` = `https://gblayer.github.io` as a variable. Optionally
+   add `GMAIL_CLIENT_ID` / `GMAIL_CLIENT_SECRET` / `GMAIL_REFRESH_TOKEN`
+   (secrets) + `SMTP_USER` (variable) — same values as the routine env — to
+   enable an instant branded welcome email on signup. Deploy and copy the
+   `*.workers.dev` URL.
 3. **config.yaml**: set `site.subscribe_endpoint` to that Worker URL.
 4. **Send-time env** (routine environment / CI secrets): add the same
    `RESEND_API_KEY` and `UNSUB_SECRET` so the sender can read the contact

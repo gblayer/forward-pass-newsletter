@@ -148,8 +148,7 @@ def _subscribe_box(feed: str, inoreader: str, subscribe_endpoint: str) -> str:
             f'</form>'
             f'<div id="fpMsg" style="margin-top:8px;font-family:{SANS};font-size:12.5px;color:{MUTED};"></div>'
             f'<div style="margin-top:8px;font-family:{SANS};font-size:12.5px;color:{MUTED};line-height:1.5;">'
-            f'Unsubscribe anytime &mdash; one click at the bottom of each email. '
-            f'Prefer RSS? <a href="{escape(feed)}" style="color:{ACCENT};">Grab the feed</a>.</div>'
+            f'Unsubscribe anytime &mdash; one click at the bottom of each email.</div>'
             f'</div>'
             + _SUBSCRIBE_JS.replace("__ENDPOINT__", subscribe_endpoint.rstrip("/"))
         )
