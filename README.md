@@ -19,9 +19,9 @@ benchmarks, and the industry moves around them.
 Every **Monday** it sweeps the previous week's arXiv + HuggingFace, scores every
 candidate against a research topic profile, reads the top ~10 papers, and writes
 a short **problem → method → results → limitations** digest for each — plus a
-"this week in industry" section and a one-line **In brief** summary. It runs
-autonomously as a Claude Code routine — no servers, no API keys — delivered by
-email and published to the web, free at any scale.
+"this week in industry" section and a one-line **In brief** summary. The
+pipeline is AI-assisted and runs autonomously — no servers to babysit —
+delivered by email and published to the web, free at any scale.
 
 ### What's at [gblayer.github.io/forward-pass-newsletter](https://gblayer.github.io/forward-pass-newsletter/)?
 
@@ -102,6 +102,35 @@ Everything lives in `config.yaml`:
   `newsletter/relevance.py::filter_papers` (default 6/10), or just make
   the NOT-relevant section of the topic profile more explicit.
 
+## Email subscribers (Resend Audiences + Cloudflare Worker)
+
+The site's subscribe form stores signups in a **Resend Audience**; each email
+carries a per-recipient **one-click unsubscribe** link (RFC 8058 headers, so
+Gmail/Yahoo show their native inbox Unsubscribe button). GitHub Pages is
+static, so a tiny **Cloudflare Worker** (`infra/subscribe-worker.js`) relays
+the form to Resend without exposing the API key. Free up to 1,000 contacts.
+
+One-time setup:
+
+1. **Resend** ([resend.com](https://resend.com)): create an account → API key
+   → Audiences → create one → copy its **Audience ID**.
+2. **Cloudflare** ([dash.cloudflare.com](https://dash.cloudflare.com), free):
+   Workers → Create → paste `infra/subscribe-worker.js`. Under the Worker's
+   *Settings → Variables and Secrets* add: `RESEND_API_KEY`,
+   `RESEND_AUDIENCE_ID`, `UNSUB_SECRET` (any long random string) as secrets,
+   and `ALLOWED_ORIGIN` = `https://gblayer.github.io` as a variable. Deploy
+   and copy the `*.workers.dev` URL.
+3. **config.yaml**: set `site.subscribe_endpoint` to that Worker URL.
+4. **Send-time env** (routine environment / CI secrets): add the same
+   `RESEND_API_KEY`, `RESEND_AUDIENCE_ID`, and `UNSUB_SECRET` so the sender
+   can read the audience and sign unsubscribe links.
+
+Delivery still goes through your existing transport (Gmail API / SMTP);
+Resend only stores the list. Subscribers merge with `NEWSLETTER_TO`, deduped.
+Unsubscribes flip `unsubscribed: true` on the contact and are skipped on the
+next send. Everything degrades gracefully: with no endpoint configured the
+site shows the RSS-only box and emails use a mailto unsubscribe fallback.
+
 ## Local testing
 
 ```bash
@@ -123,5 +152,5 @@ open preview.html
 <p align="center">
   <img src="assets/logo.svg" alt="Forward Pass" width="120">
   <br>
-  <sub><b>⏩ Forward Pass</b> — a Claude Code routine. Built weekly, read anywhere.</sub>
+  <sub><b>⏩ Forward Pass</b> — AI-assisted. Built weekly, read anywhere.</sub>
 </p>

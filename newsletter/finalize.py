@@ -98,7 +98,7 @@ def main() -> int:
         site_url = site_cfg.get("base_url", "") if site_cfg.get("enabled") else ""
         html = build_html(
             papers, window_label, industry=industry, spotlight=spotlight, name=name,
-            site_url=site_url,
+            site_url=site_url, email_mode=True,
         )
         extra = f" + {len(industry)} industry" if industry else ""
         subject = (
