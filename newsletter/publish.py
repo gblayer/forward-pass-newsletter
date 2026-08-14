@@ -95,8 +95,86 @@ def _cf_beacon(token: str) -> str:
     )
 
 
+_SUBSCRIBE_JS = """
+<script>
+document.getElementById('fpSub').addEventListener('submit', async function (ev) {
+  ev.preventDefault();
+  var msg = document.getElementById('fpMsg');
+  var email = document.getElementById('fpEmail').value.trim();
+  msg.style.color = '#8b887c';
+  msg.textContent = 'Subscribing\\u2026';
+  try {
+    var r = await fetch('__ENDPOINT__/subscribe', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email: email}),
+    });
+    var j = await r.json();
+    if (j.ok) {
+      var d = new Date();
+      d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7));
+      var label = d.toLocaleDateString('en-US', {month: 'long', day: 'numeric'});
+      msg.style.color = '#3b38f5';
+      msg.textContent = "You're in \\u2014 next issue lands Monday, " + label + ".";
+      document.getElementById('fpSub').reset();
+    } else {
+      msg.style.color = '#ff5a1f';
+      msg.textContent = j.error || 'Something went wrong \\u2014 please try again.';
+    }
+  } catch (e) {
+    msg.style.color = '#ff5a1f';
+    msg.textContent = 'Network error \\u2014 please try again.';
+  }
+});
+</script>
+"""
+
+
+def _subscribe_box(feed: str, inoreader: str, subscribe_endpoint: str) -> str:
+    """The signup box. Email-form-first when the Worker endpoint is configured;
+    otherwise the original RSS-only box (so the site builds before deploy)."""
+    if subscribe_endpoint:
+        return (
+            f'<div style="border:1.5px solid {ACCENT};background:rgba(59,56,245,0.06);padding:18px 20px;margin-bottom:34px;">'
+            f'<div style="font-family:{MONO};font-size:11px;font-weight:600;letter-spacing:.1em;'
+            f'text-transform:uppercase;color:{ACCENT};margin-bottom:8px;">Subscribe &middot; free &middot; every Monday</div>'
+            f'<form id="fpSub" style="margin-top:12px;display:flex;gap:8px;">'
+            f'<input id="fpEmail" type="email" required placeholder="you@email.com" '
+            f'style="flex:1;min-width:0;padding:10px 12px;border:1.5px solid {INK};background:#fff;'
+            f'font-family:{MONO};font-size:13px;color:{INK};outline:none;">'
+            f'<button type="submit" style="background:{ACCENT};color:#fff;border:none;cursor:pointer;'
+            f'font-family:{MONO};font-size:11.5px;font-weight:600;letter-spacing:.05em;'
+            f'text-transform:uppercase;padding:10px 16px;">Subscribe</button>'
+            f'</form>'
+            f'<div id="fpMsg" style="margin-top:8px;font-family:{SANS};font-size:12.5px;color:{MUTED};"></div>'
+            f'<div style="margin-top:8px;font-family:{SANS};font-size:12.5px;color:{MUTED};line-height:1.5;">'
+            f'Unsubscribe anytime &mdash; one click at the bottom of each email.</div>'
+            f'</div>'
+            + _SUBSCRIBE_JS.replace("__ENDPOINT__", subscribe_endpoint.rstrip("/"))
+        )
+    return (
+        f'<div style="border:1.5px solid {ACCENT};background:rgba(59,56,245,0.06);padding:18px 20px;margin-bottom:34px;">'
+        f'<div style="font-family:{MONO};font-size:11px;font-weight:600;letter-spacing:.1em;'
+        f'text-transform:uppercase;color:{ACCENT};margin-bottom:8px;">Subscribe &middot; free</div>'
+        f'<div style="font-family:{SANS};font-size:14px;color:{INK};line-height:1.5;">'
+        f'Get every issue in your RSS reader. Copy this feed URL into any reader:</div>'
+        f'<div style="margin-top:8px;padding:9px 11px;background:#fff;border:1px solid #cfcdc2;'
+        f'font-family:{MONO};font-size:12.5px;color:{INK};word-break:break-all;">'
+        f'<a href="{escape(feed)}" style="color:{ACCENT};">{escape(feed)}</a></div>'
+        f'<div style="margin-top:12px;">'
+        f'<a href="{escape(inoreader)}" style="display:inline-block;background:{ACCENT};color:#fff;'
+        f'font-family:{MONO};font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;'
+        f'padding:8px 13px;margin:0 6px 6px 0;">+ Inoreader</a>'
+        f'</div>'
+        f'<div style="margin-top:8px;font-family:{SANS};font-size:12.5px;color:{MUTED};line-height:1.5;">'
+        f'New to RSS? A reader (Feedly, Inoreader, NetNewsWire, Thunderbird&hellip;) gathers newsletters in '
+        f'one place. Paste the URL above into yours &mdash; unsubscribe anytime by removing the feed.</div>'
+        f'</div>'
+    )
+
+
 def _index_html(items: list[dict], base_url: str, title: str, subtitle: str,
-                cf_token: str = "") -> str:
+                cf_token: str = "", subscribe_endpoint: str = "") -> str:
     b = base_url.rstrip("/")
     feed = f"{b}/rss.xml"
     enc = quote(feed, safe="")  # percent-encoded feed URL for one-click links
@@ -119,6 +197,11 @@ def _index_html(items: list[dict], base_url: str, title: str, subtitle: str,
         '<!DOCTYPE html><html><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
         f"<title>{escape(title)}</title>"
+        f'<meta property="og:title" content="{escape(title)}">'
+        f'<meta property="og:description" content="{escape(subtitle)}">'
+        f'<meta property="og:image" content="{b}/thumbnail.png">'
+        f'<meta property="og:url" content="{b}/">'
+        '<meta name="twitter:card" content="summary_large_image">'
         f'<link rel="alternate" type="application/rss+xml" title="{escape(title)}" href="{escape(feed)}">'
         '<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700'
         '&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" '
@@ -137,24 +220,8 @@ def _index_html(items: list[dict], base_url: str, title: str, subtitle: str,
         f'<p style="margin:14px 0 0;font-family:{SANS};font-size:13px;color:#c3c0b4;">{escape(subtitle)}</p>'
         f'</div>'
         f'<div style="padding:30px 40px 40px;">'
-        # subscribe box (reader-agnostic: the feed URL works in any RSS reader)
-        f'<div style="border:1.5px solid {ACCENT};background:rgba(59,56,245,0.06);padding:18px 20px;margin-bottom:34px;">'
-        f'<div style="font-family:{MONO};font-size:11px;font-weight:600;letter-spacing:.1em;'
-        f'text-transform:uppercase;color:{ACCENT};margin-bottom:8px;">Subscribe &middot; free</div>'
-        f'<div style="font-family:{SANS};font-size:14px;color:{INK};line-height:1.5;">'
-        f'Get every issue in your RSS reader. Copy this feed URL into any reader:</div>'
-        f'<div style="margin-top:8px;padding:9px 11px;background:#fff;border:1px solid #cfcdc2;'
-        f'font-family:{MONO};font-size:12.5px;color:{INK};word-break:break-all;">'
-        f'<a href="{escape(feed)}" style="color:{ACCENT};">{escape(feed)}</a></div>'
-        f'<div style="margin-top:12px;">'
-        f'<a href="{escape(inoreader)}" style="display:inline-block;background:{ACCENT};color:#fff;'
-        f'font-family:{MONO};font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;'
-        f'padding:8px 13px;margin:0 6px 6px 0;">+ Inoreader</a>'
-        f'</div>'
-        f'<div style="margin-top:8px;font-family:{SANS};font-size:12.5px;color:{MUTED};line-height:1.5;">'
-        f'New to RSS? A reader (Feedly, Inoreader, NetNewsWire, Thunderbird&hellip;) gathers newsletters in '
-        f'one place. Paste the URL above into yours &mdash; unsubscribe anytime by removing the feed.</div>'
-        f'</div>'
+        # subscribe box (email-form-first once the Worker endpoint is configured)
+        f'{_subscribe_box(feed, inoreader, subscribe_endpoint)}'
         # archive
         f'<div style="font-family:{MONO};font-size:11.5px;font-weight:600;letter-spacing:.16em;'
         f'text-transform:uppercase;color:{INK};border-bottom:2px solid {INK};padding-bottom:9px;">Archive</div>'
@@ -203,7 +270,15 @@ def publish(papers: list[Paper], window_label: str, industry: list[dict],
     items.sort(key=lambda x: x["number"], reverse=True)
     MANIFEST.write_text(json.dumps(items, indent=1))
 
-    (DOCS / "index.html").write_text(_index_html(items, base_url, name, subtitle, cf_token))
+    (DOCS / "index.html").write_text(_index_html(
+        items, base_url, name, subtitle, cf_token,
+        subscribe_endpoint=(site.get("subscribe_endpoint") or ""),
+    ))
     (DOCS / "rss.xml").write_text(_rss_xml(items, base_url, name, subtitle))
+
+    # Social-share thumbnail (og:image) — keep the docs/ copy in sync.
+    thumb = Path("assets/thumbnail.png")
+    if thumb.exists():
+        (DOCS / "thumbnail.png").write_bytes(thumb.read_bytes())
 
     return f"{base_url}/{rel_path}"

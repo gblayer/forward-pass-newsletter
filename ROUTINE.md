@@ -20,6 +20,9 @@ API credits. The scripts handle fetching, dedup, and email delivery.
    - **SMTP** (local runs / GitHub Actions only): `SMTP_USER`,
      `SMTP_PASSWORD` (a Gmail App Password).
    Plus `NEWSLETTER_TO` — comma-separated recipients.
+   Optional subscriber list (README "Email subscribers"): `RESEND_API_KEY`,
+   `UNSUB_SECRET` — the send then also covers everyone who signed up via
+   the site form, with one-click unsubscribe links.
    Network access: set the environment to **Full** (needs arxiv.org,
    huggingface.co, googleapis.com for Gmail, and open web for industry news).
 5. Trigger: **schedule**, daily, **07:30 UTC** (delivered before 10:00 Paris;

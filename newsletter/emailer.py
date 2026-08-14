@@ -25,7 +25,12 @@ from email.mime.text import MIMEText
 
 import requests
 
+from . import subscribers
 from .models import Paper
+
+# Replaced per recipient at send time with their one-click unsubscribe URL
+# (or a mailto fallback when no subscriber list is configured).
+UNSUB_PLACEHOLDER = "%%UNSUB_URL%%"
 
 # ---------------------------------------------------------------------------
 # Issue numbering
@@ -255,6 +260,8 @@ def build_html(
     name: str = "Forward Pass",
     extra_top_html: str = "",        # inserted inside <body> before the card (web nav)
     site_url: str = "",              # if set, footer links to the online issue + subscribe page
+    email_mode: bool = False,        # True for the emailed copy: adds the per-recipient
+                                     # unsubscribe line (placeholder filled in by send())
 ) -> str:
     now = datetime.now()
     issue_no = _issue_number(now)
@@ -317,6 +324,14 @@ def build_html(
             f'<a href="{b}/" style="color:{MUTED_LT};text-decoration:none;">Subscribe / share</a>'
             f'</div>'
         )
+    unsub_line = ""
+    if email_mode:
+        unsub_line = (
+            f'<div style="margin-top:8px;font-family:{MONO};font-size:10.5px;'
+            f'letter-spacing:.05em;color:{MUTED_LT};">New issue every Monday &middot; '
+            f'<a href="{UNSUB_PLACEHOLDER}" style="color:{MUTED_LT};'
+            f'text-decoration:underline;">Unsubscribe</a></div>'
+        )
     footer = f"""
     <div class="fpFoot" style="background:{INK};padding:30px 40px;text-align:center;">
       {web_links}
@@ -324,6 +339,10 @@ def build_html(
                    text-transform:uppercase;color:{PAPER};">
         <span style="color:{ACCENT};">&raquo;</span>FP<span style="color:{ACCENT2};">.</span>
       </span>
+      <div style="margin-top:14px;font-family:{MONO};font-size:10.5px;letter-spacing:.05em;
+                  color:{MUTED_LT};">Forward Pass is an AI-assisted newsletter and therefore it can
+                  make mistakes. Check the linked papers.</div>
+      {unsub_line}
     </div>"""
 
     card = f"""
@@ -372,13 +391,34 @@ def _recipients() -> list[str]:
     return [a.strip() for a in raw.replace(";", ",").split(",") if a.strip()]
 
 
-def _build_message(subject: str, html: str, sender: str, bcc: list[str] | None = None) -> MIMEMultipart:
+def _personalize(html: str, recipient: str, sender: str) -> tuple[str, dict[str, str]]:
+    """Fill the unsubscribe placeholder for one recipient.
+
+    Returns (html, extra_headers). With a configured subscriber list this is
+    a one-click HTTPS link plus the RFC 8058 List-Unsubscribe headers (Gmail/
+    Yahoo render their native inbox Unsubscribe button from these); otherwise
+    a mailto fallback so the footer link always works.
+    """
+    url = subscribers.unsubscribe_url(recipient)
+    if url:
+        headers = {
+            "List-Unsubscribe": f"<{url}>, <mailto:{sender}?subject=unsubscribe>",
+            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        }
+    else:
+        url = f"mailto:{sender}?subject=unsubscribe"
+        headers = {"List-Unsubscribe": f"<{url}>"}
+    return html.replace(UNSUB_PLACEHOLDER, url), headers
+
+
+def _build_message(subject: str, html: str, sender: str, to: str,
+                   headers: dict[str, str] | None = None) -> MIMEMultipart:
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"] = sender
-    msg["To"] = sender
-    if bcc:
-        msg["Bcc"] = ", ".join(bcc)
+    msg["To"] = to
+    for key, value in (headers or {}).items():
+        msg[key] = value
     msg.attach(MIMEText(html, "html"))
     return msg
 
@@ -397,50 +437,66 @@ def _send_via_gmail_api(subject: str, html: str, sender: str, recipients: list[s
     token_resp.raise_for_status()
     access_token = token_resp.json()["access_token"]
 
-    msg = _build_message(subject, html, sender, bcc=recipients)
-    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
-    resp = requests.post(
-        GMAIL_SEND_URL,
-        headers={"Authorization": f"Bearer {access_token}"},
-        json={"raw": raw},
-        timeout=30,
-    )
-    resp.raise_for_status()
+    for recipient in recipients:
+        body, headers = _personalize(html, recipient, sender)
+        msg = _build_message(subject, body, sender, recipient, headers)
+        raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+        resp = requests.post(
+            GMAIL_SEND_URL,
+            headers={"Authorization": f"Bearer {access_token}"},
+            json={"raw": raw},
+            timeout=30,
+        )
+        resp.raise_for_status()
 
 
-def _send_via_resend(subject: str, html: str, recipients: list[str]) -> None:
-    resp = requests.post(
-        RESEND_URL,
-        headers={"Authorization": f"Bearer {os.environ['RESEND_API_KEY']}"},
-        json={
-            "from": os.environ.get("RESEND_FROM", "Forward Pass <onboarding@resend.dev>"),
-            "to": recipients,
-            "subject": subject,
-            "html": html,
-        },
-        timeout=30,
-    )
-    resp.raise_for_status()
+def _send_via_resend(subject: str, html: str, sender: str, recipients: list[str]) -> None:
+    for recipient in recipients:
+        body, headers = _personalize(html, recipient, sender)
+        resp = requests.post(
+            RESEND_URL,
+            headers={"Authorization": f"Bearer {os.environ['RESEND_API_KEY']}"},
+            json={
+                "from": os.environ.get("RESEND_FROM", "Forward Pass <onboarding@resend.dev>"),
+                "to": [recipient],
+                "subject": subject,
+                "html": body,
+                "headers": headers,
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
 
 
 def _send_via_smtp(subject: str, html: str, sender: str, recipients: list[str],
                    smtp_host: str, smtp_port: int) -> None:
     password = os.environ["SMTP_PASSWORD"]
-    msg = _build_message(subject, html, sender)
     with smtplib.SMTP(smtp_host, smtp_port) as server:
         server.starttls()
         server.login(sender, password)
-        server.sendmail(sender, recipients, msg.as_string())
+        for recipient in recipients:
+            body, headers = _personalize(html, recipient, sender)
+            msg = _build_message(subject, body, sender, recipient, headers)
+            server.sendmail(sender, [recipient], msg.as_string())
 
 
 def send(html: str, subject: str, smtp_host: str, smtp_port: int) -> None:
     sender = os.environ.get("SMTP_USER", "")
-    recipients = _recipients()
+
+    # Static env list + everyone who signed up through the site's subscribe
+    # form (Resend Audience), deduped case-insensitively.
+    seen: set[str] = set()
+    recipients: list[str] = []
+    for addr in _recipients() + subscribers.audience_recipients():
+        key = addr.strip().lower()
+        if key and key not in seen:
+            seen.add(key)
+            recipients.append(addr.strip())
 
     if os.environ.get("GMAIL_REFRESH_TOKEN"):
         _send_via_gmail_api(subject, html, sender, recipients)
     elif os.environ.get("RESEND_API_KEY"):
-        _send_via_resend(subject, html, recipients)
+        _send_via_resend(subject, html, sender, recipients)
     elif os.environ.get("SMTP_PASSWORD"):
         _send_via_smtp(subject, html, sender, recipients, smtp_host, smtp_port)
     else:
