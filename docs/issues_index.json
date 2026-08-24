@@ -1,5 +1,13 @@
 [
  {
+  "number": 13,
+  "date": "2026-08-24",
+  "iso": "2026-08-24T07:53:22.340060+00:00",
+  "title": "Forward Pass \u2014 Issue 13 (Aug 24, 2026)",
+  "path": "issues/issue-13.html",
+  "summary": "10 papers, 1 industry update \u2014 Four papers this week attack tabular-FM inference cost from different angles: hybrid Transformer-SSM blocks (Tydra), two-stage teacher-to-MLP distillation (GEAR), cached-embedding kNN localization (Localized TabICLv2), and adaptive retrieval/shot selection (ARASH)."
+ },
+ {
   "number": 11,
   "date": "2026-08-13",
   "iso": "2026-08-13T21:45:38.253377+00:00",
