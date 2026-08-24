@@ -75,11 +75,14 @@ no questions. Steps:
 
 4. INDUSTRY NEWS (config.yaml -> industry_watch). Web-search for news about
    the listed companies' tabular-FM work: model releases, papers, funding,
-   launches, benchmarks. Window: THE PREVIOUS WEEK (last 7 days,
-   lookback_days=7). Include ONLY items genuinely published in that window
-   AND that materially concern tabular FMs / tabular ML / relational FMs /
-   neural processes. Verify each against a real dated URL — do NOT pad with
-   older items or "context". If nothing qualifies, use [].
+   launches, benchmarks. ALSO run 1-2 OPEN searches for NEW entrants (e.g.
+   "new tabular foundation model startup", "tabular AI company launch") and
+   include any notable NEW company/product entering the tabular-FM space this
+   week even if it is not on the list. Window: THE PREVIOUS WEEK (last 7
+   days, lookback_days=7). Include ONLY items genuinely published in that
+   window AND that materially concern tabular FMs / tabular ML / relational
+   FMs / neural processes. Verify each against a real dated URL — do NOT pad
+   with older items or "context". If nothing qualifies, use [].
 
 5. IN BRIEF (config.yaml -> spotlight). A scannable top summary as bullets:
    `academia` = 2-4 short one-line bullets on the week's key papers/themes;

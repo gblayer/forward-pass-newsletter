@@ -257,8 +257,12 @@ industry_watch:
     - SAP                 # tabular ICL group
     - Salesforce
     - "SODA / Inria"      # TabICL
+    - Synthefy            # synthetic tabular data / tabular FMs
+    - Lexsi Labs          # Orion tabular FM
   # Only surface items that materially concern tabular foundation models,
   # tabular ML, relational FMs, or neural-process modelling.
+  # The routine ALSO surfaces notable NEW companies/products entering the
+  # tabular-FM space even if not listed here (see ROUTINE.md step 4).
 
 # ------------------------------------------------------------
 # SPOTLIGHT (routine mode only)
