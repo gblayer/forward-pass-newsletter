@@ -326,6 +326,14 @@ email:
   # the top N papers in tabular AI").
   subject_prefix: "⏩ Forward Pass"
   newsletter_name: "Forward Pass"
+  # RFC 8058 List-Unsubscribe / one-click-unsubscribe HEADERS. These give
+  # public subscribers a native inbox "Unsubscribe" button, BUT they mark the
+  # message as bulk newsletter mail — which strict institutional gateways
+  # (e.g. inria's Zimbra) then greylist/reject when it comes from a personal
+  # gmail.com. Keep FALSE while sending from Gmail to a small/institutional
+  # list (mail looks like normal 1:1 mail; the footer still has an unsub link).
+  # Turn TRUE only once you send from a VERIFIED DOMAIN via a real ESP.
+  list_unsubscribe_headers: false
 
 # ------------------------------------------------------------
 # SCHEDULING BEHAVIOR

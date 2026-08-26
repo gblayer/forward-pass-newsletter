@@ -22,11 +22,17 @@ import smtplib
 from datetime import date, datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from pathlib import Path
 
 import requests
+import yaml
 
 from . import subscribers
 from .models import Paper
+
+_EMAIL_CFG = yaml.safe_load(
+    (Path(__file__).resolve().parent.parent / "config.yaml").read_text()
+).get("email", {})
 
 # Replaced per recipient at send time with their one-click unsubscribe URL
 # (or a mailto fallback when no subscriber list is configured).
@@ -399,15 +405,22 @@ def _personalize(html: str, recipient: str, sender: str) -> tuple[str, dict[str,
     Yahoo render their native inbox Unsubscribe button from these); otherwise
     a mailto fallback so the footer link always works.
     """
-    url = subscribers.unsubscribe_url(recipient)
-    if url:
-        headers = {
-            "List-Unsubscribe": f"<{url}>, <mailto:{sender}?subject=unsubscribe>",
-            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-        }
-    else:
-        url = f"mailto:{sender}?subject=unsubscribe"
-        headers = {"List-Unsubscribe": f"<{url}>"}
+    sub_url = subscribers.unsubscribe_url(recipient)
+    url = sub_url or f"mailto:{sender}?subject=unsubscribe"
+
+    # The footer link (`url`) is always filled. The List-Unsubscribe HEADERS,
+    # however, mark the message as bulk newsletter mail — which strict gateways
+    # (inria's Zimbra) then defer when it's from a personal gmail.com. Only emit
+    # them when explicitly enabled (email.list_unsubscribe_headers).
+    headers: dict[str, str] = {}
+    if _EMAIL_CFG.get("list_unsubscribe_headers", False):
+        if sub_url:
+            headers = {
+                "List-Unsubscribe": f"<{sub_url}>, <mailto:{sender}?subject=unsubscribe>",
+                "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+            }
+        else:
+            headers = {"List-Unsubscribe": f"<{url}>"}
     return html.replace(UNSUB_PLACEHOLDER, url), headers
 
 
