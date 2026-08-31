@@ -1,5 +1,13 @@
 [
  {
+  "number": 14,
+  "date": "2026-08-31",
+  "iso": "2026-08-31T07:47:00.221729+00:00",
+  "title": "Forward Pass \u2014 Issue 14 (Aug 31, 2026)",
+  "path": "issues/issue-14.html",
+  "summary": "10 papers, 1 industry update \u2014 SOMTab and ClusterAttention both attack tabular ICL's attention bottleneck \u2014 a Mamba-hybrid architecture and PCA-clustered sparse attention \u2014 for 2-24x inference speedups at a small accuracy cost."
+ },
+ {
   "number": 13,
   "date": "2026-08-24",
   "iso": "2026-08-24T07:53:22.340060+00:00",
