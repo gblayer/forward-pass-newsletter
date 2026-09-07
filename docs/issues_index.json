@@ -1,5 +1,13 @@
 [
  {
+  "number": 15,
+  "date": "2026-09-07",
+  "iso": "2026-09-07T07:53:11.507174+00:00",
+  "title": "Forward Pass \u2014 Issue 15 (Sep 07, 2026)",
+  "path": "issues/issue-15.html",
+  "summary": "10 papers \u2014 Two independent TFM technical reports (Amazon's Mitra-v2, Xiaomi-TabLDM) both post statistical ties or near-wins against 1B+-parameter rivals with far smaller/cheaper models."
+ },
+ {
   "number": 14,
   "date": "2026-08-31",
   "iso": "2026-08-31T07:47:00.221729+00:00",
