@@ -1,5 +1,13 @@
 [
  {
+  "number": 17,
+  "date": "2026-09-21",
+  "iso": "2026-09-21T07:45:20.551850+00:00",
+  "title": "Forward Pass \u2014 Issue 17 (Sep 21, 2026)",
+  "path": "issues/issue-17.html",
+  "summary": "8 papers, 3 industry updates \u2014 TabPFN-3.5 and LimiX-2 both post new TabArena/TALENT/BCCO state-of-the-art results this week, intensifying the race among tabular foundation models."
+ },
+ {
   "number": 16,
   "date": "2026-09-14",
   "iso": "2026-09-14T08:50:24.367376+00:00",
