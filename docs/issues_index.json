@@ -1,5 +1,13 @@
 [
  {
+  "number": 18,
+  "date": "2026-09-28",
+  "iso": "2026-09-28T07:46:43.477510+00:00",
+  "title": "Forward Pass \u2014 Issue 18 (Sep 28, 2026)",
+  "path": "issues/issue-18.html",
+  "summary": "10 papers, 1 industry update \u2014 Two papers dig into what TFMs actually compute in-context: one derives an explicit leave-one-out update rule behind TabPFN-style ICL and sets a new TabArena Elo record; another benchmarks attention kernels (FlashAttention-3 vs cuDNN SDPA vs SageAttention) specifically for tabular row/column attention shapes."
+ },
+ {
   "number": 17,
   "date": "2026-09-21",
   "iso": "2026-09-21T07:45:20.551850+00:00",
