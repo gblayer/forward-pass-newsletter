@@ -1,5 +1,13 @@
 [
  {
+  "number": 19,
+  "date": "2026-10-05",
+  "iso": "2026-10-05T07:50:04.811233+00:00",
+  "title": "Forward Pass \u2014 Issue 19 (Oct 05, 2026)",
+  "path": "issues/issue-19.html",
+  "summary": "10 papers, 1 industry update \u2014 Making TFMs cheaper: distillation into small students, a looped single-block TFM with ~90% fewer parameters, and linear-time attention for long contexts."
+ },
+ {
   "number": 18,
   "date": "2026-09-28",
   "iso": "2026-09-28T07:46:43.477510+00:00",
