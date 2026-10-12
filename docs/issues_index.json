@@ -1,5 +1,13 @@
 [
  {
+  "number": 20,
+  "date": "2026-10-12",
+  "iso": "2026-10-12T07:50:56.829776+00:00",
+  "title": "Forward Pass \u2014 Issue 20 (Oct 12, 2026)",
+  "path": "issues/issue-20.html",
+  "summary": "10 papers \u2014 Efficiency dominates: TFMs look overparameterized (half the blocks removable at \u22640.002 AUROC), and KV-cache compression and activation alignment cut context cost."
+ },
+ {
   "number": 19,
   "date": "2026-10-05",
   "iso": "2026-10-05T07:50:04.811233+00:00",
