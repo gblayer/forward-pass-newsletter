@@ -1,5 +1,13 @@
 [
  {
+  "number": 21,
+  "date": "2026-10-19",
+  "iso": "2026-10-19T07:50:51.316667+00:00",
+  "title": "Forward Pass \u2014 Issue 21 (Oct 19, 2026)",
+  "path": "issues/issue-21.html",
+  "summary": "10 papers \u2014 TILE shows the LLM-to-table interface matters more than LLM size for string-heavy tables."
+ },
+ {
   "number": 20,
   "date": "2026-10-12",
   "iso": "2026-10-12T07:50:56.829776+00:00",
