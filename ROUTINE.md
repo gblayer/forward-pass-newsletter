@@ -27,12 +27,20 @@ API credits. The scripts handle fetching, dedup, and email delivery.
    huggingface.co, googleapis.com for Gmail, and open web for industry news).
 5. Trigger: **schedule**, daily, **07:30 UTC** (delivered before 10:00 Paris;
    the run takes ~10-15 min).
-6. Paste the prompt below.
+6. Paste the short pointer below into the routine's Instructions. It tells
+   the run to read the full prompt from this file, so edits to the prompt
+   in the repo take effect on the next run — no re-pasting needed:
+
+   ```
+   Open ROUTINE.md in this repository, find the section "Routine prompt",
+   and carry out the instructions inside its code block exactly, as if they
+   were pasted here. Work autonomously, no questions.
+   ```
 7. First issue: run the routine once manually, temporarily replacing the
    flag in step 1 of the prompt with `--first-run --fetch-only` to backfill
    the last 7 days.
 
-## Routine prompt (paste as-is)
+## Routine prompt
 
 ```
 You are producing my WEEKLY tabular-ML paper newsletter (runs on Mondays).
@@ -109,8 +117,15 @@ no questions. Steps:
    artifacts, personal uploads, and re-uploads / format conversions /
    quantizations (ONNX/GGUF) of models that already exist or were already
    covered. When you cannot confirm it is a foundation model, leave it out.
-   For each one you keep, use company = owner/org, url = the HF model URL,
-   date = its Updated date.
+   INDUSTRY vs ACADEMIA (applies to HF models AND TabArena entries): include
+   a paper-less model ONLY if the publisher is a company / industry AI lab
+   (e.g. Mistral, a startup, a corporate research lab). If it comes from
+   academia (a university, an academic lab or group, or an individual
+   researcher), DO NOT include it — wait for the official arXiv paper or
+   technical report, which the paper pipeline will pick up in a later week.
+   When you can't tell whether the owner is industry or academic, leave it
+   out. For each one you keep, use company = owner/org, url = the HF model
+   URL, date = its Updated date.
 
 5. IN BRIEF (config.yaml -> spotlight). A scannable top summary as bullets:
    `academia` = 2-4 short one-line bullets on the week's key papers/themes;

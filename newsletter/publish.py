@@ -85,6 +85,44 @@ def _rss_xml(items: list[dict], base_url: str, title: str, subtitle: str) -> str
     )
 
 
+# Bump when assets/thumbnail.png changes, so link-preview caches
+# (Slack, Teams, LinkedIn, …) refetch the image instead of a stale/broken copy.
+THUMB_VERSION = "2"
+
+
+def _share_meta(base_url: str, title: str, description: str, page_url: str) -> str:
+    """<title> + Open Graph + Twitter tags so shared links unfurl with the thumbnail."""
+    b = base_url.rstrip("/")
+    img = f"{b}/thumbnail.png?v={THUMB_VERSION}"
+    t, d = escape(title), escape(description)
+    return (
+        f"<title>{t}</title>"
+        f'<meta name="description" content="{d}">'
+        '<meta property="og:type" content="website">'
+        '<meta property="og:site_name" content="Forward Pass">'
+        f'<meta property="og:title" content="{t}">'
+        f'<meta property="og:description" content="{d}">'
+        f'<meta property="og:url" content="{escape(page_url)}">'
+        f'<meta property="og:image" content="{img}">'
+        f'<meta property="og:image:secure_url" content="{img}">'
+        '<meta property="og:image:type" content="image/png">'
+        '<meta property="og:image:width" content="1200">'
+        '<meta property="og:image:height" content="627">'
+        '<meta property="og:image:alt" content="Forward Pass — weekly digest of tabular AI">'
+        '<meta name="twitter:card" content="summary_large_image">'
+        f'<meta name="twitter:title" content="{t}">'
+        f'<meta name="twitter:description" content="{d}">'
+        f'<meta name="twitter:image" content="{img}">'
+    )
+
+
+def _inject_share_meta(html: str, meta: str) -> str:
+    """Add share tags to an issue page's <head> (idempotent)."""
+    if 'property="og:image"' in html:
+        return html
+    return html.replace("</head>", meta + "</head>", 1)
+
+
 def _cf_beacon(token: str) -> str:
     """Cloudflare Web Analytics beacon (privacy-first, no cookies). Empty if unset."""
     if not token:
@@ -196,12 +234,7 @@ def _index_html(items: list[dict], base_url: str, title: str, subtitle: str,
     return (
         '<!DOCTYPE html><html><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        f"<title>{escape(title)}</title>"
-        f'<meta property="og:title" content="{escape(title)}">'
-        f'<meta property="og:description" content="{escape(subtitle)}">'
-        f'<meta property="og:image" content="{b}/thumbnail.png">'
-        f'<meta property="og:url" content="{b}/">'
-        '<meta name="twitter:card" content="summary_large_image">'
+        f'{_share_meta(b, title, subtitle, f"{b}/")}'
         f'<link rel="alternate" type="application/rss+xml" title="{escape(title)}" href="{escape(feed)}">'
         '<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700'
         '&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" '
@@ -254,6 +287,11 @@ def publish(papers: list[Paper], window_label: str, industry: list[dict],
     if beacon:
         issue_html = issue_html.replace("</head>", beacon + "</head>", 1)
     rel_path = f"issues/issue-{issue_no}.html"
+    issue_title = f"{name} — Issue {issue_no} ({now.strftime('%b %d, %Y')})"
+    issue_summary = _summary(papers, industry, spotlight)
+    issue_html = _inject_share_meta(
+        issue_html, _share_meta(base_url, issue_title, issue_summary, f"{base_url}/{rel_path}"),
+    )
     (DOCS / rel_path).write_text(issue_html)
 
     # Manifest of all issues (state that drives the archive + feed).
@@ -263,9 +301,9 @@ def publish(papers: list[Paper], window_label: str, industry: list[dict],
         "number": issue_no,
         "date": now.strftime("%Y-%m-%d"),
         "iso": now.replace(tzinfo=timezone.utc).isoformat(),
-        "title": f"{name} — Issue {issue_no} ({now.strftime('%b %d, %Y')})",
+        "title": issue_title,
         "path": rel_path,
-        "summary": _summary(papers, industry, spotlight),
+        "summary": issue_summary,
     })
     items.sort(key=lambda x: x["number"], reverse=True)
     MANIFEST.write_text(json.dumps(items, indent=1))

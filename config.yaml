@@ -287,6 +287,8 @@ industry_watch:
 # across datasets/tasks, in-context / prior-fitted, a reusable base model) —
 # NOT a dataset-specific fine-tune, demo, benchmark artifact, or personal
 # upload. Noisy source: assess each candidate carefully, exclude when unsure.
+# Industry only: paper-less models from companies / industry labs go in the
+# industry section; academic ones wait for their arXiv paper / tech report.
 # ------------------------------------------------------------
 hf_hub_watch:
   enabled: true
