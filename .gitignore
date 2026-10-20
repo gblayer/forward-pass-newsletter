@@ -6,3 +6,6 @@ digest.json
 .venv/
 .DS_Store
 fetch.log
+
+# HF Hub watch candidate dump (routine mode)
+hf_models.json

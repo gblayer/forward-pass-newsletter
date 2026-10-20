@@ -32,6 +32,42 @@ log = logging.getLogger("newsletter")
 CONFIG = yaml.safe_load((Path(__file__).resolve().parent.parent / "config.yaml").read_text())
 
 
+def compute_window(now: datetime | None = None, first_run: bool = False):
+    """Return (since, until, window_label) for the current run.
+
+    Factored out so other discovery sources (e.g. the HF Hub model watch)
+    scan the EXACT same time window as the arXiv / HF-daily paper fetch.
+    `until` is an exclusive upper bound.
+    """
+    now = now or datetime.now(timezone.utc)
+    until = now
+    if first_run:
+        since = now - timedelta(days=CONFIG["run"]["first_run_lookback_days"])
+        window_label = f"last {CONFIG['run']['first_run_lookback_days']} days"
+    elif CONFIG["run"].get("weekly", False):
+        # Weekly cadence: the previous FULL calendar week, Monday 00:00 to
+        # Sunday 23:59 (Europe/Paris).
+        paris = ZoneInfo("Europe/Paris")
+        now_paris = now.astimezone(paris)
+        week_end_paris = (now_paris - timedelta(days=now_paris.weekday())).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        week_start_paris = week_end_paris - timedelta(days=7)
+        since = week_start_paris.astimezone(timezone.utc)
+        until = week_end_paris.astimezone(timezone.utc)
+        window_label = (
+            f"week of {week_start_paris:%b %d} – "
+            f"{(week_end_paris - timedelta(days=1)):%b %d}"
+        )
+    elif now.weekday() == 0:  # daily-mode Monday: reach back to Friday
+        since = now - timedelta(hours=CONFIG["run"].get("monday_lookback_hours", 74))
+        window_label = "since Friday"
+    else:
+        since = now - timedelta(hours=CONFIG["run"]["lookback_hours"])
+        window_label = "last 24 hours"
+    return since, until, window_label
+
+
 def keyword_prefilter(papers: list[Paper], keywords: list[str]) -> list[Paper]:
     patterns = [(kw, re.compile(re.escape(kw), re.IGNORECASE)) for kw in keywords]
     kept = []
@@ -89,33 +125,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    now = datetime.now(timezone.utc)
-    until = now  # exclusive upper bound on publication time
-    if args.first_run:
-        since = now - timedelta(days=CONFIG["run"]["first_run_lookback_days"])
-        window_label = f"last {CONFIG['run']['first_run_lookback_days']} days"
-    elif CONFIG["run"].get("weekly", False):
-        # Weekly cadence: the previous FULL calendar week, Monday 00:00 to
-        # Sunday 23:59 (Europe/Paris). Anything announced after the week
-        # ended is excluded here AND left unseen, so it rolls into next week.
-        paris = ZoneInfo("Europe/Paris")
-        now_paris = now.astimezone(paris)
-        week_end_paris = (now_paris - timedelta(days=now_paris.weekday())).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
-        week_start_paris = week_end_paris - timedelta(days=7)
-        since = week_start_paris.astimezone(timezone.utc)
-        until = week_end_paris.astimezone(timezone.utc)
-        window_label = (
-            f"week of {week_start_paris:%b %d} – "
-            f"{(week_end_paris - timedelta(days=1)):%b %d}"
-        )
-    elif now.weekday() == 0:  # daily-mode Monday: reach back to Friday
-        since = now - timedelta(hours=CONFIG["run"].get("monday_lookback_hours", 74))
-        window_label = "since Friday"
-    else:
-        since = now - timedelta(hours=CONFIG["run"]["lookback_hours"])
-        window_label = "last 24 hours"
+    since, until, window_label = compute_window(first_run=args.first_run)
     log.info("Window: %s -> %s", since.isoformat(), until.isoformat())
 
     seen = state.load_seen()

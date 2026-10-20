@@ -42,9 +42,12 @@ no questions. Steps:
 1. Install deps and fetch candidates:
      pip install -r requirements.txt
      python -m newsletter.main --fetch-only
-   This writes candidates.json (papers from the PREVIOUS FULL WEEK,
+     python -m newsletter.hf_models
+   The first writes candidates.json (papers from the PREVIOUS FULL WEEK,
    Monday 00:00 to Sunday 23:59 Europe/Paris, already deduped against
-   seen_papers.json).
+   seen_papers.json). The second writes hf_models.json — Hugging Face Hub
+   models (tabular + time-series tasks) whose "Updated" date falls in that
+   SAME week, ranked foundation-model-first. You assess these in step 4.
 
 2. Read config.yaml and internalize the `topic_profile` — it defines what
    is relevant to my PhD. Then read candidates.json and score EVERY
@@ -90,6 +93,24 @@ no questions. Steps:
    that window AND that materially concern tabular FMs / tabular ML /
    relational FMs / neural processes. Verify each against a real dated URL — do
    NOT pad with older items or "context". If nothing qualifies, use [].
+
+   HF HUB MODEL WATCH. Read hf_models.json (models whose "Updated" date is in
+   the same week). It is a NOISY, recall-oriented list — most rows are
+   dataset-specific fine-tunes, demos, re-uploads, quantizations, or personal
+   experiments. For the plausible ones (use fm_signal, downloads, likes, and
+   card_excerpt to triage; always look closely at anything with real traction
+   or an FM-sounding name), VERIFY via the card_excerpt AND a quick web search
+   on the OWNER and the model: (a) who published it, (b) what it actually is.
+   Add it to the industry list ONLY if it is a genuine, NEW tabular or
+   time-series FOUNDATION model — pretrained to generalize across
+   datasets/tasks, in-context / prior-fitted, released as a reusable base model
+   (e.g. a new TabPFN/TabICL/Chronos/TimesFM-class model). EXCLUDE: ordinary
+   fine-tunes, single-dataset or single-domain models, demos/apps, benchmark
+   artifacts, personal uploads, and re-uploads / format conversions /
+   quantizations (ONNX/GGUF) of models that already exist or were already
+   covered. When you cannot confirm it is a foundation model, leave it out.
+   For each one you keep, use company = owner/org, url = the HF model URL,
+   date = its Updated date.
 
 5. IN BRIEF (config.yaml -> spotlight). A scannable top summary as bullets:
    `academia` = 2-4 short one-line bullets on the week's key papers/themes;

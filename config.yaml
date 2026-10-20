@@ -277,6 +277,26 @@ industry_watch:
         section, even if the company is not on the list above.
 
 # ------------------------------------------------------------
+# HF HUB MODEL WATCH (routine mode; populated by newsletter.hf_models)
+# Catches foundation models that ship as weights on the Hugging Face Hub
+# with no arXiv / HF-daily paper. The script lists models under these tasks
+# whose "Updated" timestamp falls in the SAME weekly window as the paper
+# fetch, pre-loads each card, and writes hf_models.json. The routine then
+# verifies owner + what each model does, and includes an item ONLY if it is
+# a genuine tabular / time-series FOUNDATION model (pretrained to generalize
+# across datasets/tasks, in-context / prior-fitted, a reusable base model) —
+# NOT a dataset-specific fine-tune, demo, benchmark artifact, or personal
+# upload. Noisy source: assess each candidate carefully, exclude when unsure.
+# ------------------------------------------------------------
+hf_hub_watch:
+  enabled: true
+  tasks:
+    - tabular-classification
+    - tabular-regression
+    - time-series-forecasting
+  max_candidates: 60                # cap handed to the routine (ranked FM-first)
+
+# ------------------------------------------------------------
 # SPOTLIGHT (routine mode only)
 # A short themed section on the current status of tabular foundation
 # models in ONE specific vertical, rotating / auto-selected each issue
