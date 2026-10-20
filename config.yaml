@@ -266,6 +266,15 @@ industry_watch:
   # tabular ML, relational FMs, or neural-process modelling.
   # The routine ALSO surfaces notable NEW companies/products entering the
   # tabular-FM space even if not listed here (see ROUTINE.md step 4).
+  leaderboards:                     # watch these for NEW models that debut off-arXiv
+    - name: TabArena
+      url: "https://tabarena.ai"    # also check its GitHub submission / under-review PRs
+      note: >
+        New tabular (foundation) models often appear on the TabArena
+        leaderboard (or as an under-review submission PR) before/without any
+        arXiv paper — e.g. ChakraTab, EXAONE Tabular. Each week, check for new
+        or newly-climbing entrants and surface notable ones in the industry
+        section, even if the company is not on the list above.
 
 # ------------------------------------------------------------
 # SPOTLIGHT (routine mode only)

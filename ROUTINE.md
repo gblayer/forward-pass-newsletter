@@ -78,11 +78,18 @@ no questions. Steps:
    launches, benchmarks. ALSO run 1-2 OPEN searches for NEW entrants (e.g.
    "new tabular foundation model startup", "tabular AI company launch") and
    include any notable NEW company/product entering the tabular-FM space this
-   week even if it is not on the list. Window: THE PREVIOUS WEEK (last 7
-   days, lookback_days=7). Include ONLY items genuinely published in that
-   window AND that materially concern tabular FMs / tabular ML / relational
-   FMs / neural processes. Verify each against a real dated URL — do NOT pad
-   with older items or "context". If nothing qualifies, use [].
+   week even if it is not on the list. ALSO check the LEADERBOARD WATCH in
+   config.yaml -> industry_watch.leaderboards: for each (currently TabArena,
+   https://tabarena.ai), look at the leaderboard AND its GitHub submission /
+   under-review PRs for tabular (foundation) models that newly appeared or
+   newly climbed this week — many debut there WITHOUT an arXiv paper (e.g.
+   ChakraTab, EXAONE Tabular). Surface notable new entrants in the industry
+   section even if the company is not on the companies list; attribute them to
+   TabArena with the dated leaderboard/PR URL. Window: THE PREVIOUS WEEK (last
+   7 days, lookback_days=7). Include ONLY items genuinely published/added in
+   that window AND that materially concern tabular FMs / tabular ML /
+   relational FMs / neural processes. Verify each against a real dated URL — do
+   NOT pad with older items or "context". If nothing qualifies, use [].
 
 5. IN BRIEF (config.yaml -> spotlight). A scannable top summary as bullets:
    `academia` = 2-4 short one-line bullets on the week's key papers/themes;
