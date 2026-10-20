@@ -117,7 +117,8 @@ no questions. Steps:
    artifacts, personal uploads, and re-uploads / format conversions /
    quantizations (ONNX/GGUF) of models that already exist or were already
    covered. When you cannot confirm it is a foundation model, leave it out.
-   INDUSTRY vs ACADEMIA (applies to HF models AND TabArena entries): include
+   INDUSTRY vs ACADEMIA (HF Hub models only — TabArena entries stay open to
+   academic groups and companies alike): include
    a paper-less model ONLY if the publisher is a company / industry AI lab
    (e.g. Mistral, a startup, a corporate research lab). If it comes from
    academia (a university, an academic lab or group, or an individual
