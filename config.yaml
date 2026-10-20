@@ -257,8 +257,11 @@ industry_watch:
     - SAP                 # tabular ICL group
     - Salesforce
     - "SODA / Inria"      # TabICL
-    - Synthefy            # synthetic tabular data / tabular FMs
+    - Synthefy            # synthetic tabular data / tabular FMs (Nori)
     - Lexsi Labs          # Orion tabular FM
+    - LG AI Research      # EXAONE Tabular
+    - YHat Labs           # ChakraTab
+    - Xiaomi              # Xiaomi-TabLDM
   # Only surface items that materially concern tabular foundation models,
   # tabular ML, relational FMs, or neural-process modelling.
   # The routine ALSO surfaces notable NEW companies/products entering the
