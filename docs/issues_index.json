@@ -1,5 +1,13 @@
 [
  {
+  "number": 22,
+  "date": "2026-10-26",
+  "iso": "2026-10-26T07:44:36.097632+00:00",
+  "title": "Forward Pass \u2014 Issue 22 (Oct 26, 2026)",
+  "path": "issues/issue-22.html",
+  "summary": "9 papers, 1 industry update \u2014 TabICLv2 pretrained only on binary tasks still beats the default and TabPFN-v2.6 on TabArena."
+ },
+ {
   "number": 21,
   "date": "2026-10-19",
   "iso": "2026-10-19T07:50:51.316667+00:00",
