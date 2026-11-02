@@ -1,5 +1,13 @@
 [
  {
+  "number": 23,
+  "date": "2026-11-02",
+  "iso": "2026-11-02T07:46:05.717956+00:00",
+  "title": "Forward Pass \u2014 Issue 23 (Nov 02, 2026)",
+  "path": "issues/issue-23.html",
+  "summary": "6 papers, 1 industry update \u2014 TFMs get trustworthiness scrutiny: TabCUQ for uncertainty, and a pre-registered test finding no calibration shortcut for clinical risk."
+ },
+ {
   "number": 22,
   "date": "2026-10-26",
   "iso": "2026-10-26T07:44:36.097632+00:00",
