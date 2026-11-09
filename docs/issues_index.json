@@ -1,5 +1,13 @@
 [
  {
+  "number": 24,
+  "date": "2026-11-09",
+  "iso": "2026-11-09T08:43:36.545867+00:00",
+  "title": "Forward Pass \u2014 Issue 24 (Nov 09, 2026)",
+  "path": "issues/issue-24.html",
+  "summary": "8 papers, 1 industry update \u2014 TFMs on relational data: a frozen single-table TFM plus a parameter-free relational encoder rivals relational FMs (KumoRFM-2) on six benchmarks."
+ },
+ {
   "number": 23,
   "date": "2026-11-02",
   "iso": "2026-11-02T07:46:05.717956+00:00",
