@@ -1,5 +1,13 @@
 [
  {
+  "number": 25,
+  "date": "2026-11-16",
+  "iso": "2026-11-16T08:46:38.444066+00:00",
+  "title": "Forward Pass \u2014 Issue 25 (Nov 16, 2026)",
+  "path": "issues/issue-25.html",
+  "summary": "10 papers, 7 industry updates \u2014 TabOmics: a 7.3M-param synthetic-prior TFM matches or beats TabPFN-3.5 on 46 wide omics tasks with ~30x fewer parameters."
+ },
+ {
   "number": 24,
   "date": "2026-11-09",
   "iso": "2026-11-09T08:43:36.545867+00:00",
