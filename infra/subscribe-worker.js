@@ -134,17 +134,6 @@ async function sendWelcome(env, email, origin) {
          </div>
        </div></body>`;
 
-    const text = [
-      "You're in — thanks for subscribing to Forward Pass.",
-      "",
-      "Every Monday you'll get the week's top papers on tabular AI.",
-      "",
-      `Until then, catch up on past issues: ${site}/`,
-      "",
-      "Forward Pass is an AI-assisted newsletter and therefore it can make mistakes. Check the linked papers.",
-      `Unsubscribe: ${unsubUrl}`,
-      "",
-    ].join("\n");
     const subject = "Welcome to Forward Pass — see you Monday";
 
     if (viaResend) {
@@ -153,7 +142,6 @@ async function sendWelcome(env, email, origin) {
         to: [email],
         subject,
         html,
-        text,
         headers: {
           "List-Unsubscribe": `<${unsubUrl}>`,
           "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
@@ -177,9 +165,6 @@ async function sendWelcome(env, email, origin) {
     if (!tok.ok) return;
     const access = (await tok.json()).access_token;
 
-    // multipart/alternative: text/plain + text/html. HTML-only mail is a
-    // classic spam signal, so always ship the plain-text twin.
-    const boundary = `fp-${crypto.randomUUID()}`;
     const raw = [
       `From: Forward Pass <${env.SMTP_USER}>`,
       `To: ${email}`,
@@ -187,20 +172,9 @@ async function sendWelcome(env, email, origin) {
       // so a bare UTF-8 em-dash here renders as mojibake in Gmail.
       `Subject: =?UTF-8?B?${b64Std(subject)}?=`,
       "MIME-Version: 1.0",
-      `Content-Type: multipart/alternative; boundary="${boundary}"`,
-      "",
-      `--${boundary}`,
-      "Content-Type: text/plain; charset=utf-8",
-      "Content-Transfer-Encoding: base64",
-      "",
-      b64Std(text).replace(/.{76}/g, "$&\r\n"),
-      `--${boundary}`,
       "Content-Type: text/html; charset=utf-8",
-      "Content-Transfer-Encoding: base64",
       "",
-      b64Std(html).replace(/.{76}/g, "$&\r\n"),
-      `--${boundary}--`,
-      "",
+      html,
     ].join("\r\n");
     await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
       method: "POST",
