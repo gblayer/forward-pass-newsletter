@@ -19,9 +19,12 @@ from __future__ import annotations
 import base64
 import os
 import smtplib
+import time
 from datetime import date, datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formatdate, make_msgid, parseaddr
+from html.parser import HTMLParser
 from pathlib import Path
 
 import requests
@@ -385,19 +388,99 @@ def build_html(
 
 
 # ---------------------------------------------------------------------------
-# Transport (unchanged)
+# Transport
 # ---------------------------------------------------------------------------
+# Deliverability: the transport that reliably reaches strict institutional
+# filters (universities, research institutes) is Resend sending from YOUR OWN
+# verified domain (SPF + DKIM + DMARC aligned) — set RESEND_FROM to an address
+# on that domain and it becomes the primary transport automatically. Sending
+# bulk-style HTML from a personal gmail.com address gets spam-scored and
+# rejected by such gateways (e.g. "554 5.7.1 Spam score too high").
 GMAIL_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GMAIL_SEND_URL = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
 RESEND_URL = "https://api.resend.com/emails"
+RESEND_BATCH_URL = "https://api.resend.com/emails/batch"
+RESEND_BATCH_SIZE = 100  # Resend's per-request batch limit
 
 
 def _recipients() -> list[str]:
-    raw = os.environ["NEWSLETTER_TO"]
+    raw = os.environ.get("NEWSLETTER_TO", "")
     return [a.strip() for a in raw.replace(";", ",").split(",") if a.strip()]
 
 
-def _personalize(html: str, recipient: str, sender: str) -> tuple[str, dict[str, str]]:
+def _own_domain_resend() -> bool:
+    """True when Resend is configured with a sender on a verified own domain."""
+    sender = os.environ.get("RESEND_FROM", "")
+    return bool(os.environ.get("RESEND_API_KEY")) and bool(sender) \
+        and "resend.dev" not in sender
+
+
+class _TextExtractor(HTMLParser):
+    """Minimal HTML -> plain text: keeps block breaks and link targets."""
+
+    _BLOCK = {"p", "div", "br", "tr", "h1", "h2", "h3", "h4", "li", "table", "hr"}
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.out: list[str] = []
+        self._href: str | None = None
+        self._link_text: list[str] = []
+        self._skip = 0
+
+    def handle_starttag(self, tag, attrs):
+        if tag in ("style", "script", "head", "title"):
+            self._skip += 1
+        elif tag == "a":
+            self._href = dict(attrs).get("href")
+            self._link_text = []
+        elif tag in self._BLOCK:
+            self.out.append("\n")
+
+    def handle_endtag(self, tag):
+        if tag in ("style", "script", "head", "title"):
+            self._skip = max(0, self._skip - 1)
+        elif tag == "a":
+            text = " ".join("".join(self._link_text).split())
+            href = self._href or ""
+            if href and not href.startswith("#") and href not in text:
+                self.out.append(f"{text} ({href})" if text else href)
+            else:
+                self.out.append(text)
+            self._href = None
+        elif tag in self._BLOCK:
+            self.out.append("\n")
+
+    def handle_data(self, data):
+        if self._skip:
+            return
+        if self._href is not None:
+            self._link_text.append(data)
+        else:
+            self.out.append(data)
+
+
+def html_to_text(html: str) -> str:
+    """Plain-text alternative for the HTML email.
+
+    HTML-only mail is a classic spam signal (SpamAssassin MIME_HTML_ONLY);
+    shipping a text/plain part alongside the HTML lowers spam scores.
+    """
+    parser = _TextExtractor()
+    parser.feed(html)
+    lines = [" ".join(line.split()) for line in "".join(parser.out).splitlines()]
+    text, blank = [], False
+    for line in lines:
+        if line:
+            text.append(line)
+            blank = False
+        elif not blank:
+            text.append("")
+            blank = True
+    return "\n".join(text).strip() + "\n"
+
+
+def _personalize(html: str, recipient: str, sender: str,
+                 bulk_headers: bool = False) -> tuple[str, dict[str, str]]:
     """Fill the unsubscribe placeholder for one recipient.
 
     Returns (html, extra_headers). With a configured subscriber list this is
@@ -408,12 +491,13 @@ def _personalize(html: str, recipient: str, sender: str) -> tuple[str, dict[str,
     sub_url = subscribers.unsubscribe_url(recipient)
     url = sub_url or f"mailto:{sender}?subject=unsubscribe"
 
-    # The footer link (`url`) is always filled. The List-Unsubscribe HEADERS,
-    # however, mark the message as bulk newsletter mail — which strict gateways
-    # (inria's Zimbra) then defer when it's from a personal gmail.com. Only emit
-    # them when explicitly enabled (email.list_unsubscribe_headers).
+    # The footer link (`url`) is always filled. The List-Unsubscribe HEADERS
+    # mark the message as bulk newsletter mail: from a personal gmail.com that
+    # gets it deferred by strict gateways, but from a verified own domain they
+    # are expected (Gmail/Yahoo bulk-sender rules) and HELP deliverability.
+    # So: on for own-domain Resend sends, otherwise only if config enables them.
     headers: dict[str, str] = {}
-    if _EMAIL_CFG.get("list_unsubscribe_headers", False):
+    if bulk_headers or _EMAIL_CFG.get("list_unsubscribe_headers", False):
         if sub_url:
             headers = {
                 "List-Unsubscribe": f"<{sub_url}>, <mailto:{sender}?subject=unsubscribe>",
@@ -430,9 +514,15 @@ def _build_message(subject: str, html: str, sender: str, to: str,
     msg["Subject"] = subject
     msg["From"] = sender
     msg["To"] = to
+    msg["Date"] = formatdate(localtime=False)
+    addr = parseaddr(sender)[1]
+    domain = addr.rsplit("@", 1)[-1] if "@" in addr else None
+    msg["Message-ID"] = make_msgid(domain=domain)
     for key, value in (headers or {}).items():
         msg[key] = value
-    msg.attach(MIMEText(html, "html"))
+    # Order matters: the LAST part is the preferred one, so text first.
+    msg.attach(MIMEText(html_to_text(html), "plain", "utf-8"))
+    msg.attach(MIMEText(html, "html", "utf-8"))
     return msg
 
 
@@ -464,21 +554,46 @@ def _send_via_gmail_api(subject: str, html: str, sender: str, recipients: list[s
 
 
 def _send_via_resend(subject: str, html: str, sender: str, recipients: list[str]) -> None:
+    """Send through Resend's batch API (100 personalised emails per request).
+
+    With RESEND_FROM on a verified own domain this is the deliverable path:
+    DKIM-signed by your domain, plain-text part, and one-click unsubscribe
+    headers. Replies go to SMTP_USER (your Gmail) via Reply-To.
+    """
+    from_addr = os.environ.get("RESEND_FROM", "Forward Pass <onboarding@resend.dev>")
+    reply_to = os.environ.get("RESEND_REPLY_TO") or sender
+    bulk = _own_domain_resend()
+    unsub_mailbox = reply_to or from_addr
+    payloads = []
     for recipient in recipients:
-        body, headers = _personalize(html, recipient, sender)
-        resp = requests.post(
-            RESEND_URL,
-            headers={"Authorization": f"Bearer {os.environ['RESEND_API_KEY']}"},
-            json={
-                "from": os.environ.get("RESEND_FROM", "Forward Pass <onboarding@resend.dev>"),
-                "to": [recipient],
-                "subject": subject,
-                "html": body,
-                "headers": headers,
-            },
-            timeout=30,
-        )
+        body, headers = _personalize(html, recipient, unsub_mailbox, bulk_headers=bulk)
+        item = {
+            "from": from_addr,
+            "to": [recipient],
+            "subject": subject,
+            "html": body,
+            "text": html_to_text(body),
+            "headers": headers,
+        }
+        if reply_to:
+            item["reply_to"] = reply_to
+        payloads.append(item)
+
+    for i in range(0, len(payloads), RESEND_BATCH_SIZE):
+        chunk = payloads[i:i + RESEND_BATCH_SIZE]
+        for attempt in range(3):
+            resp = requests.post(
+                RESEND_BATCH_URL,
+                headers={"Authorization": f"Bearer {os.environ['RESEND_API_KEY']}"},
+                json=chunk,
+                timeout=60,
+            )
+            if resp.status_code != 429:  # rate limited -> back off and retry
+                break
+            time.sleep(2 ** attempt)
         resp.raise_for_status()
+        if i + RESEND_BATCH_SIZE < len(payloads):
+            time.sleep(0.6)  # stay under Resend's default 2 req/s
 
 
 def _send_via_smtp(subject: str, html: str, sender: str, recipients: list[str],
@@ -506,7 +621,12 @@ def send(html: str, subject: str, smtp_host: str, smtp_port: int) -> None:
             seen.add(key)
             recipients.append(addr.strip())
 
-    if os.environ.get("GMAIL_REFRESH_TOKEN"):
+    # Own verified domain via Resend wins: it is the only transport that
+    # passes strict institutional spam filters at scale. Gmail stays the
+    # fallback until RESEND_FROM is set.
+    if _own_domain_resend():
+        _send_via_resend(subject, html, sender, recipients)
+    elif os.environ.get("GMAIL_REFRESH_TOKEN"):
         _send_via_gmail_api(subject, html, sender, recipients)
     elif os.environ.get("RESEND_API_KEY"):
         _send_via_resend(subject, html, sender, recipients)
@@ -514,7 +634,7 @@ def send(html: str, subject: str, smtp_host: str, smtp_port: int) -> None:
         _send_via_smtp(subject, html, sender, recipients, smtp_host, smtp_port)
     else:
         raise RuntimeError(
-            "No email transport configured: set GMAIL_REFRESH_TOKEN "
-            "(+ GMAIL_CLIENT_ID / GMAIL_CLIENT_SECRET), or RESEND_API_KEY, "
-            "or SMTP_PASSWORD."
+            "No email transport configured: set RESEND_API_KEY + RESEND_FROM "
+            "(own verified domain, recommended), GMAIL_REFRESH_TOKEN "
+            "(+ GMAIL_CLIENT_ID / GMAIL_CLIENT_SECRET), or SMTP_PASSWORD."
         )

@@ -18,8 +18,12 @@
  *   UNSUB_SECRET   (secret)  any long random string; MUST equal the
  *                            UNSUB_SECRET env var of the newsletter run
  *   ALLOWED_ORIGIN (var)     https://gblayer.github.io
- * Optional — enables the instant welcome email (sent via the same Gmail
- * account as the newsletter; skipped silently when absent):
+ * Optional — enables the instant welcome email (skipped silently when absent).
+ * Preferred (deliverable to strict university/corporate filters):
+ *   RESEND_FROM (var)  e.g. "Forward Pass <hello@yourdomain.com>" on a domain
+ *                      VERIFIED in Resend (SPF + DKIM + DMARC). Uses the
+ *                      RESEND_API_KEY above; replies go to SMTP_USER if set.
+ * Fallback (personal Gmail — strict filters may spam-reject it):
  *   GMAIL_CLIENT_ID / GMAIL_CLIENT_SECRET / GMAIL_REFRESH_TOKEN (secrets)
  *   SMTP_USER (var)  the Gmail from-address
  *
@@ -83,26 +87,19 @@ function b64urlEncode(str) {
   return b64Std(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-/** Welcome email, sent via the same Gmail account as the newsletter.
- *  Best-effort: any failure is swallowed — the signup itself already succeeded.
- *  Requires the optional Worker secrets GMAIL_CLIENT_ID / GMAIL_CLIENT_SECRET /
- *  GMAIL_REFRESH_TOKEN and the var SMTP_USER; silently skipped when absent. */
-async function sendWelcome(env, email, origin) {
-  if (!env.GMAIL_REFRESH_TOKEN || !env.SMTP_USER) return;
-  try {
-    const tok = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        client_id: env.GMAIL_CLIENT_ID,
-        client_secret: env.GMAIL_CLIENT_SECRET,
-        refresh_token: env.GMAIL_REFRESH_TOKEN,
-        grant_type: "refresh_token",
-      }),
-    });
-    if (!tok.ok) return;
-    const access = (await tok.json()).access_token;
+/** True when RESEND_FROM is an address on your own verified domain. */
+function ownDomainResend(env) {
+  return !!(env.RESEND_API_KEY && env.RESEND_FROM && !env.RESEND_FROM.includes("resend.dev"));
+}
 
+/** Welcome email. Sent via Resend from your verified domain when RESEND_FROM
+ *  is set (deliverable everywhere), else via the newsletter's Gmail account.
+ *  Best-effort: any failure is swallowed — the signup itself already succeeded.
+ *  Silently skipped when neither transport is configured. */
+async function sendWelcome(env, email, origin) {
+  const viaResend = ownDomainResend(env);
+  if (!viaResend && (!env.GMAIL_REFRESH_TOKEN || !env.SMTP_USER)) return;
+  try {
     const site = "https://gblayer.github.io/forward-pass-newsletter";
     const unsubUrl =
       `${origin}/unsubscribe?e=${b64urlEncode(email)}&t=${await hmacHex(env.UNSUB_SECRET, email)}`;
@@ -137,18 +134,73 @@ async function sendWelcome(env, email, origin) {
          </div>
        </div></body>`;
 
+    const text = [
+      "You're in — thanks for subscribing to Forward Pass.",
+      "",
+      "Every Monday you'll get the week's top papers on tabular AI.",
+      "",
+      `Until then, catch up on past issues: ${site}/`,
+      "",
+      "Forward Pass is an AI-assisted newsletter and therefore it can make mistakes. Check the linked papers.",
+      `Unsubscribe: ${unsubUrl}`,
+      "",
+    ].join("\n");
+    const subject = "Welcome to Forward Pass — see you Monday";
+
+    if (viaResend) {
+      const msg = {
+        from: env.RESEND_FROM,
+        to: [email],
+        subject,
+        html,
+        text,
+        headers: {
+          "List-Unsubscribe": `<${unsubUrl}>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        },
+      };
+      if (env.SMTP_USER) msg.reply_to = env.SMTP_USER;
+      await resend(env, "POST", "/emails", msg);
+      return;
+    }
+
+    const tok = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: env.GMAIL_CLIENT_ID,
+        client_secret: env.GMAIL_CLIENT_SECRET,
+        refresh_token: env.GMAIL_REFRESH_TOKEN,
+        grant_type: "refresh_token",
+      }),
+    });
+    if (!tok.ok) return;
+    const access = (await tok.json()).access_token;
+
+    // multipart/alternative: text/plain + text/html. HTML-only mail is a
+    // classic spam signal, so always ship the plain-text twin.
+    const boundary = `fp-${crypto.randomUUID()}`;
     const raw = [
       `From: Forward Pass <${env.SMTP_USER}>`,
       `To: ${email}`,
       // RFC 2047 encoded-word: header charsets are separate from the body's,
       // so a bare UTF-8 em-dash here renders as mojibake in Gmail.
-      `Subject: =?UTF-8?B?${b64Std("Welcome to Forward Pass — see you Monday")}?=`,
-      `List-Unsubscribe: <${unsubUrl}>, <mailto:${env.SMTP_USER}?subject=unsubscribe>`,
-      "List-Unsubscribe-Post: List-Unsubscribe=One-Click",
+      `Subject: =?UTF-8?B?${b64Std(subject)}?=`,
       "MIME-Version: 1.0",
-      "Content-Type: text/html; charset=utf-8",
+      `Content-Type: multipart/alternative; boundary="${boundary}"`,
       "",
-      html,
+      `--${boundary}`,
+      "Content-Type: text/plain; charset=utf-8",
+      "Content-Transfer-Encoding: base64",
+      "",
+      b64Std(text).replace(/.{76}/g, "$&\r\n"),
+      `--${boundary}`,
+      "Content-Type: text/html; charset=utf-8",
+      "Content-Transfer-Encoding: base64",
+      "",
+      b64Std(html).replace(/.{76}/g, "$&\r\n"),
+      `--${boundary}--`,
+      "",
     ].join("\r\n");
     await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
       method: "POST",
@@ -235,7 +287,10 @@ export default {
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(env) });
     // Deploy marker: lets the repo owner verify which build is live.
     if (url.pathname === "/version") {
-      return json({ version: 6, welcome: true, gmail: !!env.GMAIL_REFRESH_TOKEN }, 200, env);
+      return json({
+        version: 7, welcome: true, gmail: !!env.GMAIL_REFRESH_TOKEN,
+        resendDomain: ownDomainResend(env),
+      }, 200, env);
     }
     if (url.pathname === "/subscribe" && req.method === "POST") return subscribe(req, env, url);
     if (url.pathname === "/unsubscribe") return unsubscribe(req, env, url);

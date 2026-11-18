@@ -128,11 +128,48 @@ One-time setup:
    `RESEND_API_KEY` and `UNSUB_SECRET` so the sender can read the contact
    list and sign unsubscribe links.
 
-Delivery still goes through your existing transport (Gmail API / SMTP);
-Resend only stores the list. Subscribers merge with `NEWSLETTER_TO`, deduped.
+Until step 5 is done, delivery goes through Gmail (API / SMTP) and Resend
+only stores the list. Subscribers merge with `NEWSLETTER_TO`, deduped.
 Unsubscribes flip `unsubscribed: true` on the contact and are skipped on the
 next send. Everything degrades gracefully: with no endpoint configured the
 site shows the RSS-only box and emails use a mailto unsubscribe fallback.
+
+### 5. Deliverability: send from your own domain (needed at scale)
+
+Mail from a personal `@gmail.com` address that looks like a newsletter
+(branded HTML, links, unsubscribe footer) gets spam-scored by strict
+institutional filters (universities, research institutes, many companies)
+and bounced, e.g. `554 5.7.1 Spam score too high`. The bounce comes back to
+your Gmail. You can't fix this per reader. The standard fix is to send from a
+domain you own, authenticated with SPF + DKIM + DMARC:
+
+1. **Get a domain** (~$10/yr from Cloudflare Registrar, Porkbun, Namecheap…),
+   e.g. `forwardpass.news`. A subdomain such as `mail.forwardpass.news` is fine
+   to send from.
+2. **Resend → Domains → Add domain.** Add the DNS records Resend shows you
+   at your DNS provider: the DKIM `TXT` record, the SPF `MX` + `TXT` records on
+   the `send.` subdomain, and a DMARC record, e.g.
+   `_dmarc  TXT  "v=DMARC1; p=none; rua=mailto:you@gmail.com"`.
+   Wait until Resend shows the domain as **Verified**.
+3. **Set `RESEND_FROM`**, e.g. `Forward Pass <hello@forwardpass.news>`, in:
+   - the routine environment / CI secrets (newsletter sends), and
+   - the Cloudflare Worker's variables (welcome email); then redeploy the
+     Worker from `infra/subscribe-worker.js` (`/version` should report
+     `"version": 7, "resendDomain": true`).
+
+That's all. Once `RESEND_FROM` is on a non-`resend.dev` address, it becomes
+the primary transport automatically. Gmail stays configured as the fallback.
+Own-domain sends:
+- are DKIM-signed by your domain;
+- carry a plain-text part plus RFC 8058 one-click unsubscribe headers (which
+  Gmail/Yahoo require for bulk senders);
+- go out in batches of 100 per API call;
+- set Reply-To to `SMTP_USER`, so replies still reach your Gmail.
+
+Every email now also includes a plain-text alternative, which lowers spam
+scores even on the Gmail path. Resend's free tier allows 3,000 emails/month
+and 100/day; upgrade when the list outgrows that. Bounces and complaints show
+up in the Resend dashboard instead of your inbox.
 
 ## Local testing
 
