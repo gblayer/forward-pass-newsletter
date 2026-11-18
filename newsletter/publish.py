@@ -191,8 +191,7 @@ def _subscribe_box(feed: str, inoreader: str, subscribe_endpoint: str) -> str:
             # strict university/institutional spam filters sometimes block.
             f'<div style="margin-top:10px;padding:9px 11px;border-left:3px solid {ACCENT2};background:#fff;'
             f'font-family:{SANS};font-size:12.5px;color:{INK};line-height:1.5;">'
-            f'Some institutional mail servers flag newsletters as spam and may block Forward Pass '
-            f'&mdash; we&rsquo;re working on this.</div>'
+            f'Note: Some institutional mail servers flag newsletters as spam and may block Forward Pass</div>'
             f'</div>'
             + _SUBSCRIBE_JS.replace("__ENDPOINT__", subscribe_endpoint.rstrip("/"))
         )
