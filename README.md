@@ -161,13 +161,13 @@ That's all. Once `RESEND_FROM` is on a non-`resend.dev` address, it becomes
 the primary transport automatically. Gmail stays configured as the fallback.
 Own-domain sends:
 - are DKIM-signed by your domain;
-- carry a plain-text part plus RFC 8058 one-click unsubscribe headers (which
-  Gmail/Yahoo require for bulk senders);
+- carry RFC 8058 one-click unsubscribe headers (which Gmail/Yahoo require
+  for bulk senders);
 - go out in batches of 100 per API call;
 - set Reply-To to `SMTP_USER`, so replies still reach your Gmail.
 
-Every email now also includes a plain-text alternative, which lowers spam
-scores even on the Gmail path. Resend's free tier allows 3,000 emails/month
+Emails are sent HTML-only by design (the designed issue is the only version).
+Resend's free tier allows 3,000 emails/month
 and 100/day; upgrade when the list outgrows that. Bounces and complaints show
 up in the Resend dashboard instead of your inbox.
 

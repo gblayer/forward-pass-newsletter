@@ -24,7 +24,6 @@ from datetime import date, datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid, parseaddr
-from html.parser import HTMLParser
 from pathlib import Path
 
 import requests
@@ -415,70 +414,6 @@ def _own_domain_resend() -> bool:
         and "resend.dev" not in sender
 
 
-class _TextExtractor(HTMLParser):
-    """Minimal HTML -> plain text: keeps block breaks and link targets."""
-
-    _BLOCK = {"p", "div", "br", "tr", "h1", "h2", "h3", "h4", "li", "table", "hr"}
-
-    def __init__(self) -> None:
-        super().__init__(convert_charrefs=True)
-        self.out: list[str] = []
-        self._href: str | None = None
-        self._link_text: list[str] = []
-        self._skip = 0
-
-    def handle_starttag(self, tag, attrs):
-        if tag in ("style", "script", "head", "title"):
-            self._skip += 1
-        elif tag == "a":
-            self._href = dict(attrs).get("href")
-            self._link_text = []
-        elif tag in self._BLOCK:
-            self.out.append("\n")
-
-    def handle_endtag(self, tag):
-        if tag in ("style", "script", "head", "title"):
-            self._skip = max(0, self._skip - 1)
-        elif tag == "a":
-            text = " ".join("".join(self._link_text).split())
-            href = self._href or ""
-            if href and not href.startswith("#") and href not in text:
-                self.out.append(f"{text} ({href})" if text else href)
-            else:
-                self.out.append(text)
-            self._href = None
-        elif tag in self._BLOCK:
-            self.out.append("\n")
-
-    def handle_data(self, data):
-        if self._skip:
-            return
-        if self._href is not None:
-            self._link_text.append(data)
-        else:
-            self.out.append(data)
-
-
-def html_to_text(html: str) -> str:
-    """Plain-text alternative for the HTML email.
-
-    HTML-only mail is a classic spam signal (SpamAssassin MIME_HTML_ONLY);
-    shipping a text/plain part alongside the HTML lowers spam scores.
-    """
-    parser = _TextExtractor()
-    parser.feed(html)
-    lines = [" ".join(line.split()) for line in "".join(parser.out).splitlines()]
-    text, blank = [], False
-    for line in lines:
-        if line:
-            text.append(line)
-            blank = False
-        elif not blank:
-            text.append("")
-            blank = True
-    return "\n".join(text).strip() + "\n"
-
-
 def _personalize(html: str, recipient: str, sender: str,
                  bulk_headers: bool = False) -> tuple[str, dict[str, str]]:
     """Fill the unsubscribe placeholder for one recipient.
@@ -520,8 +455,8 @@ def _build_message(subject: str, html: str, sender: str, to: str,
     msg["Message-ID"] = make_msgid(domain=domain)
     for key, value in (headers or {}).items():
         msg[key] = value
-    # Order matters: the LAST part is the preferred one, so text first.
-    msg.attach(MIMEText(html_to_text(html), "plain", "utf-8"))
+    # HTML only, by choice: the designed email is the single version of the
+    # newsletter (no plain-text alternative part).
     msg.attach(MIMEText(html, "html", "utf-8"))
     return msg
 
@@ -557,7 +492,7 @@ def _send_via_resend(subject: str, html: str, sender: str, recipients: list[str]
     """Send through Resend's batch API (100 personalised emails per request).
 
     With RESEND_FROM on a verified own domain this is the deliverable path:
-    DKIM-signed by your domain, plain-text part, and one-click unsubscribe
+    DKIM-signed by your domain, plus one-click unsubscribe
     headers. Replies go to SMTP_USER (your Gmail) via Reply-To.
     """
     from_addr = os.environ.get("RESEND_FROM", "Forward Pass <onboarding@resend.dev>")
@@ -572,7 +507,6 @@ def _send_via_resend(subject: str, html: str, sender: str, recipients: list[str]
             "to": [recipient],
             "subject": subject,
             "html": body,
-            "text": html_to_text(body),
             "headers": headers,
         }
         if reply_to:
