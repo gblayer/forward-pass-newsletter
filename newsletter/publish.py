@@ -153,7 +153,10 @@ document.getElementById('fpSub').addEventListener('submit', async function (ev) 
       d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7));
       var label = d.toLocaleDateString('en-US', {month: 'long', day: 'numeric'});
       msg.style.color = '#3b38f5';
-      msg.textContent = "You're in \\u2014 next issue lands Monday, " + label + ".";
+      var dom = (email.split('@')[1] || '').toLowerCase();
+      var personal = /^(gmail|googlemail|outlook|hotmail|live|msn|yahoo|ymail|icloud|me|mac|proton|protonmail|pm|aol|gmx|web|mail|yandex|zoho|fastmail)\\./.test(dom);
+      msg.textContent = "You're in \\u2014 next issue lands Monday, " + label + "." +
+        (personal ? "" : " Using a university or work address? Watch your spam/quarantine folder \\u2014 some institutional filters block us.");
       document.getElementById('fpSub').reset();
     } else {
       msg.style.color = '#ff5a1f';
@@ -187,6 +190,14 @@ def _subscribe_box(feed: str, inoreader: str, subscribe_endpoint: str) -> str:
             f'<div id="fpMsg" style="margin-top:8px;font-family:{SANS};font-size:12.5px;color:{MUTED};"></div>'
             f'<div style="margin-top:8px;font-family:{SANS};font-size:12.5px;color:{MUTED};line-height:1.5;">'
             f'Unsubscribe anytime &mdash; one click at the bottom of each email.</div>'
+            # Deliverability heads-up: issues go out from a personal Gmail, which
+            # strict university/institutional spam filters sometimes block.
+            f'<div style="margin-top:10px;padding:9px 11px;border-left:3px solid {ACCENT2};background:#fff;'
+            f'font-family:{SANS};font-size:12.5px;color:{INK};line-height:1.5;">'
+            f'<b>Signing up with a university or work email?</b> Some institutional mail servers '
+            f'flag newsletters as spam and may block Forward Pass. If nothing arrives by Monday, check '
+            f'your spam/quarantine folder, subscribe with a personal address instead, or read every '
+            f'issue here and via the <a href="{escape(feed)}" style="color:{ACCENT};">RSS feed</a>.</div>'
             f'</div>'
             + _SUBSCRIBE_JS.replace("__ENDPOINT__", subscribe_endpoint.rstrip("/"))
         )
@@ -263,6 +274,23 @@ def _index_html(items: list[dict], base_url: str, title: str, subtitle: str,
     )
 
 
+def refresh_index(config: dict) -> None:
+    """Rebuild docs/index.html from the existing manifest (no new issue).
+
+    Run `python -m newsletter.publish` after changing the landing page so the
+    live site picks it up before the next weekly send.
+    """
+    site = config.get("site", {})
+    items = json.loads(MANIFEST.read_text()) if MANIFEST.exists() else []
+    (DOCS / "index.html").write_text(_index_html(
+        items, (site.get("base_url") or "").rstrip("/"),
+        config["email"].get("newsletter_name", "Forward Pass"),
+        "Your weekly digest of the top papers in tabular AI.",
+        site.get("cf_analytics_token") or "",
+        subscribe_endpoint=(site.get("subscribe_endpoint") or ""),
+    ))
+
+
 def publish(papers: list[Paper], window_label: str, industry: list[dict],
             spotlight: dict | None, config: dict) -> str:
     """Write the web issue, refresh the archive + RSS feed. Returns the issue URL."""
@@ -320,3 +348,9 @@ def publish(papers: list[Paper], window_label: str, industry: list[dict],
         (DOCS / "thumbnail.png").write_bytes(thumb.read_bytes())
 
     return f"{base_url}/{rel_path}"
+
+
+if __name__ == "__main__":
+    import yaml
+    refresh_index(yaml.safe_load(Path("config.yaml").read_text()))
+    print("docs/index.html refreshed")
