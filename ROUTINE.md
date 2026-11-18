@@ -10,7 +10,11 @@ API credits. The scripts handle fetching, dedup, and email delivery.
 2. Go to **claude.ai/code/routines** → **New routine**.
 3. Select this repository.
 4. In the routine's **cloud environment**, add environment variables
-   (Anthropic API key NOT needed). Pick ONE email transport:
+   (Anthropic API key NOT needed). Pick ONE email transport (for a public
+   list, use **Resend from your own verified domain**: set `RESEND_API_KEY`
+   + `RESEND_FROM`; see README "Deliverability". It takes priority
+   automatically, and strict university filters reject newsletter mail from a
+   personal gmail.com):
    - **Gmail HTTPS API (use this in cloud routines** — their network proxy
      only allows port 443, so raw SMTP :587 is blocked):
      `SMTP_USER` (the from-address / Gmail account), `GMAIL_CLIENT_ID`,
@@ -48,7 +52,7 @@ Work autonomously,
 no questions. Steps:
 
 1. Install deps and fetch candidates:
-     pip install -r requirements.txt
+     python -m pip install -r requirements.txt
      python -m newsletter.main --fetch-only
      python -m newsletter.hf_models
    The first writes candidates.json (papers from the PREVIOUS FULL WEEK,

@@ -366,7 +366,9 @@ email:
   # (e.g. inria's Zimbra) then greylist/reject when it comes from a personal
   # gmail.com. Keep FALSE while sending from Gmail to a small/institutional
   # list (mail looks like normal 1:1 mail; the footer still has an unsub link).
-  # Turn TRUE only once you send from a VERIFIED DOMAIN via a real ESP.
+  # Sends via Resend from a VERIFIED OWN DOMAIN (env RESEND_FROM set, see
+  # README "Deliverability") always include these headers automatically;
+  # this flag only controls the Gmail/SMTP fallback paths. Leave false.
   list_unsubscribe_headers: false
 
 # ------------------------------------------------------------

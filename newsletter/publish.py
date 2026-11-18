@@ -187,6 +187,12 @@ def _subscribe_box(feed: str, inoreader: str, subscribe_endpoint: str) -> str:
             f'<div id="fpMsg" style="margin-top:8px;font-family:{SANS};font-size:12.5px;color:{MUTED};"></div>'
             f'<div style="margin-top:8px;font-family:{SANS};font-size:12.5px;color:{MUTED};line-height:1.5;">'
             f'Unsubscribe anytime &mdash; one click at the bottom of each email.</div>'
+            # Deliverability heads-up: issues go out from a personal Gmail, which
+            # strict university/institutional spam filters sometimes block.
+            f'<div style="margin-top:10px;padding:9px 11px;border-left:3px solid {ACCENT2};background:#fff;'
+            f'font-family:{SANS};font-size:12.5px;color:{INK};line-height:1.5;">'
+            f'Some institutional mail servers flag newsletters as spam and may block Forward Pass '
+            f'&mdash; we&rsquo;re working on this.</div>'
             f'</div>'
             + _SUBSCRIBE_JS.replace("__ENDPOINT__", subscribe_endpoint.rstrip("/"))
         )
@@ -263,6 +269,23 @@ def _index_html(items: list[dict], base_url: str, title: str, subtitle: str,
     )
 
 
+def refresh_index(config: dict) -> None:
+    """Rebuild docs/index.html from the existing manifest (no new issue).
+
+    Run `python -m newsletter.publish` after changing the landing page so the
+    live site picks it up before the next weekly send.
+    """
+    site = config.get("site", {})
+    items = json.loads(MANIFEST.read_text()) if MANIFEST.exists() else []
+    (DOCS / "index.html").write_text(_index_html(
+        items, (site.get("base_url") or "").rstrip("/"),
+        config["email"].get("newsletter_name", "Forward Pass"),
+        "Your weekly digest of the top papers in tabular AI.",
+        site.get("cf_analytics_token") or "",
+        subscribe_endpoint=(site.get("subscribe_endpoint") or ""),
+    ))
+
+
 def publish(papers: list[Paper], window_label: str, industry: list[dict],
             spotlight: dict | None, config: dict) -> str:
     """Write the web issue, refresh the archive + RSS feed. Returns the issue URL."""
@@ -320,3 +343,9 @@ def publish(papers: list[Paper], window_label: str, industry: list[dict],
         (DOCS / "thumbnail.png").write_bytes(thumb.read_bytes())
 
     return f"{base_url}/{rel_path}"
+
+
+if __name__ == "__main__":
+    import yaml
+    refresh_index(yaml.safe_load(Path("config.yaml").read_text()))
+    print("docs/index.html refreshed")
