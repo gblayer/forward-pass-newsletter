@@ -153,10 +153,7 @@ document.getElementById('fpSub').addEventListener('submit', async function (ev) 
       d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7));
       var label = d.toLocaleDateString('en-US', {month: 'long', day: 'numeric'});
       msg.style.color = '#3b38f5';
-      var dom = (email.split('@')[1] || '').toLowerCase();
-      var personal = /^(gmail|googlemail|outlook|hotmail|live|msn|yahoo|ymail|icloud|me|mac|proton|protonmail|pm|aol|gmx|web|mail|yandex|zoho|fastmail)\\./.test(dom);
-      msg.textContent = "You're in \\u2014 next issue lands Monday, " + label + "." +
-        (personal ? "" : " Using a university or work address? Watch your spam/quarantine folder \\u2014 some institutional filters block us.");
+      msg.textContent = "You're in \\u2014 next issue lands Monday, " + label + ".";
       document.getElementById('fpSub').reset();
     } else {
       msg.style.color = '#ff5a1f';
@@ -194,10 +191,8 @@ def _subscribe_box(feed: str, inoreader: str, subscribe_endpoint: str) -> str:
             # strict university/institutional spam filters sometimes block.
             f'<div style="margin-top:10px;padding:9px 11px;border-left:3px solid {ACCENT2};background:#fff;'
             f'font-family:{SANS};font-size:12.5px;color:{INK};line-height:1.5;">'
-            f'<b>Signing up with a university or work email?</b> Some institutional mail servers '
-            f'flag newsletters as spam and may block Forward Pass. If nothing arrives by Monday, check '
-            f'your spam/quarantine folder, subscribe with a personal address instead, or read every '
-            f'issue here and via the <a href="{escape(feed)}" style="color:{ACCENT};">RSS feed</a>.</div>'
+            f'Some institutional mail servers flag newsletters as spam and may block Forward Pass '
+            f'&mdash; we&rsquo;re working on this.</div>'
             f'</div>'
             + _SUBSCRIBE_JS.replace("__ENDPOINT__", subscribe_endpoint.rstrip("/"))
         )
