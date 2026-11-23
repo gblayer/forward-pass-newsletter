@@ -156,6 +156,13 @@ no questions. Steps:
    sends when there is content — if BOTH papers and industry are empty (a
    fully quiet week) it deliberately sends NO email and publishes nothing.
    That is expected, not an error.
+   TIMEOUT: sending to the whole list takes several minutes (one email at a
+   time, ~2 s each). Run this command with the MAXIMUM command timeout
+   (10 minutes / 600000 ms), never the 2-minute default — a cut-off mid-list
+   is what caused duplicate emails. If it is still interrupted, simply run
+   the same command again: it resumes from where it stopped (a send ledger
+   skips everyone who already received this issue). Never run it a third
+   time if the second run reports success.
 
 8. Commit and push ALL changes to the default branch with message
    "chore: update seen papers + publish issue":

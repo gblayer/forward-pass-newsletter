@@ -9,3 +9,6 @@ fetch.log
 
 # HF Hub watch candidate dump (routine mode)
 hf_models.json
+
+# per-issue send ledger (resume an interrupted send)
+.sent_ledger.json

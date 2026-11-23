@@ -17,6 +17,7 @@ in the email (see ROUTINE.md); they belong in the routine's chat summary.
 from __future__ import annotations
 
 import base64
+import json
 import os
 import smtplib
 import time
@@ -461,6 +462,31 @@ def _build_message(subject: str, html: str, sender: str, to: str,
     return msg
 
 
+# Per-issue send ledger: every address is recorded the moment its email goes
+# out, so if the send is interrupted (e.g. a command timeout in the routine)
+# and re-run, it resumes where it stopped instead of re-mailing everyone.
+# Keyed by subject, which is unique per issue. Gitignored.
+SENT_LEDGER = Path(__file__).resolve().parent.parent / ".sent_ledger.json"
+
+
+def _ledger_load(subject: str) -> set[str]:
+    try:
+        return set(json.loads(SENT_LEDGER.read_text()).get(subject, []))
+    except (FileNotFoundError, ValueError):
+        return set()
+
+
+def _ledger_add(subject: str, addrs: list[str]) -> None:
+    try:
+        data = json.loads(SENT_LEDGER.read_text())
+    except (FileNotFoundError, ValueError):
+        data = {}
+    done = set(data.get(subject, []))
+    done.update(a.strip().lower() for a in addrs)
+    data = {subject: sorted(done)}  # only the current issue is worth keeping
+    SENT_LEDGER.write_text(json.dumps(data, indent=1))
+
+
 def _send_via_gmail_api(subject: str, html: str, sender: str, recipients: list[str]) -> None:
     token_resp = requests.post(
         GMAIL_TOKEN_URL,
@@ -486,6 +512,7 @@ def _send_via_gmail_api(subject: str, html: str, sender: str, recipients: list[s
             timeout=30,
         )
         resp.raise_for_status()
+        _ledger_add(subject, [recipient])
 
 
 def _send_via_resend(subject: str, html: str, sender: str, recipients: list[str]) -> None:
@@ -526,6 +553,7 @@ def _send_via_resend(subject: str, html: str, sender: str, recipients: list[str]
                 break
             time.sleep(2 ** attempt)
         resp.raise_for_status()
+        _ledger_add(subject, [item["to"][0] for item in chunk])
         if i + RESEND_BATCH_SIZE < len(payloads):
             time.sleep(0.6)  # stay under Resend's default 2 req/s
 
@@ -540,6 +568,7 @@ def _send_via_smtp(subject: str, html: str, sender: str, recipients: list[str],
             body, headers = _personalize(html, recipient, sender)
             msg = _build_message(subject, body, sender, recipient, headers)
             server.sendmail(sender, [recipient], msg.as_string())
+            _ledger_add(subject, [recipient])
 
 
 def send(html: str, subject: str, smtp_host: str, smtp_port: int) -> None:
@@ -554,6 +583,14 @@ def send(html: str, subject: str, smtp_host: str, smtp_port: int) -> None:
         if key and key not in seen:
             seen.add(key)
             recipients.append(addr.strip())
+
+    already = _ledger_load(subject)
+    if already:
+        recipients = [r for r in recipients if r.strip().lower() not in already]
+        print(f"Resuming send: {len(already)} already received this issue, "
+              f"{len(recipients)} left.")
+        if not recipients:
+            return
 
     # Own verified domain via Resend wins: it is the only transport that
     # passes strict institutional spam filters at scale. Gmail stays the
