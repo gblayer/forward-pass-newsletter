@@ -1,5 +1,13 @@
 [
  {
+  "number": 26,
+  "date": "2026-11-23",
+  "iso": "2026-11-23T08:51:32.494475+00:00",
+  "title": "Forward Pass \u2014 Issue 26 (Nov 23, 2026)",
+  "path": "issues/issue-26.html",
+  "summary": "10 papers, 5 industry updates \u2014 NVIDIA Kumo Tabular paper: open 27M-214M TFMs rank first on 8 benchmarks and predict 36x faster than LimiX-2, though intervals overlap the runner-up."
+ },
+ {
   "number": 25,
   "date": "2026-11-16",
   "iso": "2026-11-16T08:46:38.444066+00:00",
