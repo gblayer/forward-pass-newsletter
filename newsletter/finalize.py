@@ -51,20 +51,12 @@ CONFIG = yaml.safe_load((Path(__file__).resolve().parent.parent / "config.yaml")
 
 
 def _to_paper(d: dict) -> Paper:
-    return Paper(
-        id=d["id"],
-        title=d.get("title", ""),
-        abstract=d.get("abstract", ""),
-        authors=d.get("authors", []),
-        url=d.get("url", ""),
-        published=datetime.now(timezone.utc),
-        source=d.get("source", "arxiv"),
-        matched_author=d.get("matched_author"),
-        matched_keyword=d.get("matched_keyword"),
-        is_new_version=bool(d.get("is_new_version", False)),
-        relevance_score=int(d.get("relevance_score", 0)),
-        bullets=d.get("bullets") or {},
-    )
+    return Paper.from_digest(d)
+
+
+def _is_company_paper(item: dict) -> bool:
+    """Industry entries that are full papers (company-led work) carry bullets."""
+    return bool(item.get("bullets")) and bool(item.get("id"))
 
 
 def main() -> int:
@@ -74,13 +66,20 @@ def main() -> int:
     args = parser.parse_args()
 
     digest = json.loads(Path(args.digest).read_text())
-    papers = sorted(
-        (_to_paper(d) for d in digest.get("papers", [])),
-        key=lambda p: p.relevance_score,
+    # Company-led papers sit in the industry list but share the top-N paper
+    # cap with academic papers, so moving them never makes the email longer.
+    raw_industry = digest.get("industry") or []
+    news = [it for it in raw_industry if not _is_company_paper(it)]
+    ranked = sorted(
+        [("academia", d) for d in digest.get("papers", [])]
+        + [("industry", it) for it in raw_industry if _is_company_paper(it)],
+        key=lambda x: int(x[1].get("relevance_score", 0)),
         reverse=True,
     )[: CONFIG["claude"]["max_papers_in_newsletter"]]
+    papers = [_to_paper(d) for side, d in ranked if side == "academia"]
+    company_papers = [d for side, d in ranked if side == "industry"]
     window_label = digest.get("window_label", "last 24 hours")
-    industry = digest.get("industry") or []
+    industry = company_papers + news
     spotlight = digest.get("spotlight") or None
     name = CONFIG["email"].get("newsletter_name", "In-Context")
 
@@ -129,6 +128,7 @@ def main() -> int:
         cands = json.loads(cand_file.read_text()).get("candidates", [])
         seen.update(c["id"] for c in cands)
     seen.update(p.id for p in papers)
+    seen.update(it["id"] for it in industry if _is_company_paper(it))
     state.save_seen(seen)
     print(f"seen_papers.json updated ({len(seen)} ids)")
     return 0

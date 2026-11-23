@@ -85,8 +85,24 @@ no questions. Steps:
    (and the PDF/HTML if needed) and read BEYOND THE ABSTRACT so results and
    limitations are accurate and specific — do not rely on the abstract
    alone. Publish ALL papers that score >= 6 even if there are fewer than
-   10; only cap at the 10 highest if more. I know the field (TabPFN, tabular
-   ICL, LLM embeddings, relational FMs, neural processes) — be precise.
+   10; only cap at the 10 highest if more (the cap counts kept papers in
+   BOTH sections — see below). I know the field (TabPFN, tabular ICL, LLM
+   embeddings, relational FMs, neural processes) — be precise.
+
+   ACADEMIA vs INDUSTRY for papers: the section depends on WHO published the
+   work, not WHERE (arXiv is just the venue). For every kept paper, check the
+   author affiliations (paper first page / arXiv HTML):
+     - INDUSTRY: the work is a company's or industry lab's own — its model,
+       product, or technical report (e.g. "NVIDIA Kumo Tabular", a Prior
+       Labs TabPFN report, an SAP/Google/Amazon research paper), or the first
+       or last author is at a company. Open-source/open-weights does NOT make
+       it academic.
+     - ACADEMIA: university- or academic-group-led work, INCLUDING papers
+       with one or two company co-authors who are not leading it.
+     - If you cannot tell, keep it in ACADEMIA.
+   Company papers get exactly the same scoring and the same four-field
+   digest; they are just written into the `industry` list (step 6) instead
+   of `papers`, with `company` set to the leading company (e.g. "NVIDIA").
 
 4. INDUSTRY NEWS (config.yaml -> industry_watch). Web-search for news about
    the listed companies' tabular-FM work: model releases, papers, funding,
@@ -144,11 +160,21 @@ no questions. Steps:
     "papers": [{id, title, authors, url, source, relevance_score,
                 matched_author, matched_keyword, is_new_version,
                 bullets: {problem, method, results, limitations}}],
-    "industry": [{company, headline, date, url, summary}],   // [] if none
+    "industry": [
+       // company-led PAPERS (step 3): same fields as a paper, plus company
+       {company, id, title, authors, url, source, relevance_score,
+        matched_author, matched_keyword, is_new_version,
+        bullets: {problem, method, results, limitations}},
+       // industry NEWS (step 4)
+       {company, headline, date, url, summary}
+    ],                                                       // [] if none
     "spotlight": {theme, academia: [..bullets..], industry: [..bullets..]}} // omit if none
-   Copy id/title/authors/url/source/matched_* fields verbatim from
-   candidates.json. If NO paper scores >= 6, still write digest.json (empty
-   papers list) — the industry/spotlight sections may still carry the issue.
+   `papers` holds ACADEMIC papers only. Copy id/title/authors/url/source/
+   matched_* fields verbatim from candidates.json (for company papers too).
+   The 10-paper cap is applied by finalize across academic + company papers
+   by relevance_score. If NO paper scores >= 6, still write digest.json
+   (empty papers list) — the industry/spotlight sections may still carry the
+   issue. In the spotlight, mention company papers on the `industry` side.
 
 7. Send it:  python -m newsletter.finalize digest.json
    This emails the digest, updates seen_papers.json, AND (on a real send)

@@ -119,21 +119,23 @@ def _section_header(num: str, label: str) -> str:
     )
 
 
-def _field(label: str, text: str, first: bool = False) -> str:
+def _field(label: str, text: str, first: bool = False, accent: str = ACCENT) -> str:
     if not text:
         return ""
     border = "" if first else f"border-top:1px solid {RULE};"
     return (
         f'<div style="{border}padding:12px 0;">'
         f'<div style="font-family:{MONO};font-size:10.5px;font-weight:600;'
-        f'letter-spacing:.1em;text-transform:uppercase;color:{ACCENT};margin-bottom:6px;">{label}</div>'
+        f'letter-spacing:.1em;text-transform:uppercase;color:{accent};margin-bottom:6px;">{label}</div>'
         f'<div style="font-family:{SANS};font-size:14.5px;line-height:1.55;color:{BODY};">{text}</div>'
         f'</div>'
     )
 
 
-def _paper_html(p: Paper, featured: bool = False) -> str:
-    """One academic paper as a full card. The featured (top) card gets a blue frame."""
+def _paper_html(p: Paper, featured: bool = False, accent: str = ACCENT,
+                accent_soft: str = ACCENT_SOFT, company: str = "") -> str:
+    """One paper as a full card. The featured (top) card gets a colored frame:
+    blue for academic papers, orange for company papers in the industry section."""
     badge, color = SOURCE_BADGE.get(p.source, (p.source, INK))
     b = p.bullets or {}
     version_note = (
@@ -141,33 +143,51 @@ def _paper_html(p: Paper, featured: bool = False) -> str:
         if p.is_new_version else ""
     )
     frame = (
-        f"border:1.5px solid {ACCENT};background:{ACCENT_SOFT};"
+        f"border:1.5px solid {accent};background:{accent_soft};"
         if featured else
         f"border:1.5px solid {INK};background:#ffffff;"
     )
     # (paper card carries fpCard / fpPaperTitle classes for the mobile media query)
     fields = (
-        _field("Problem", b.get("problem", ""), first=True)
-        + _field("Method", b.get("method", ""))
-        + _field("Results", b.get("results", ""))
-        + _field("Limitations", b.get("limitations", ""))
+        _field("Problem", b.get("problem", ""), first=True, accent=accent)
+        + _field("Method", b.get("method", ""), accent=accent)
+        + _field("Results", b.get("results", ""), accent=accent)
+        + _field("Limitations", b.get("limitations", ""), accent=accent)
+    )
+    company_chip = (
+        f'<span style="margin-left:6px;">{_chip(company, accent)}</span>' if company else ""
     )
     return f"""
     <div class="fpCard" style="{frame}padding:22px;margin-bottom:22px;">
-      <div style="margin-bottom:14px;">{_chip(badge, color)}{version_note}</div>
+      <div style="margin-bottom:14px;">{_chip(badge, color)}{company_chip}{version_note}</div>
       <a href="{p.url}" class="fpPaperTitle" style="display:block;font-family:{DISPLAY};font-size:22px;font-weight:600;
          line-height:1.2;letter-spacing:-.02em;color:{INK};text-decoration:none;">{p.title}</a>
       <div style="font-family:{MONO};font-size:12.5px;color:{MUTED};margin:9px 0 14px;">{_authors(p)}</div>
       {fields}
       <div style="border-top:1.5px solid {INK};margin-top:6px;padding-top:14px;">
         <a href="{p.url}" style="font-family:{MONO};font-size:12px;font-weight:600;
-           letter-spacing:.06em;text-transform:uppercase;color:{ACCENT};text-decoration:none;">&raquo; Read paper</a>
+           letter-spacing:.06em;text-transform:uppercase;color:{accent};text-decoration:none;">&raquo; Read paper</a>
       </div>
     </div>"""
 
 
 def _industry_html(items: list[dict]) -> str:
-    """First item is a featured orange-framed box; the rest are compact rows."""
+    """Company papers (entries with bullets) first, as full orange cards; then
+    news: the first news item is a featured orange-framed box, the rest are
+    compact rows."""
+    if not items:
+        return ""
+    company_papers = [it for it in items if it.get("bullets") and it.get("id")]
+    news = [it for it in items if not (it.get("bullets") and it.get("id"))]
+    cards = "".join(
+        _paper_html(Paper.from_digest(it), featured=(i == 0), accent=ACCENT2,
+                    accent_soft=ACCENT2_SOFT, company=(it.get("company") or "").strip())
+        for i, it in enumerate(company_papers)
+    )
+    return cards + _industry_news_html(news)
+
+
+def _industry_news_html(items: list[dict]) -> str:
     if not items:
         return ""
     first = items[0]

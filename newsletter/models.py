@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 @dataclass
@@ -28,3 +28,21 @@ class Paper:
         if len(self.authors) <= n:
             return ", ".join(self.authors)
         return ", ".join(self.authors[:n]) + f" (+{len(self.authors) - n})"
+
+    @classmethod
+    def from_digest(cls, d: dict) -> "Paper":
+        """Build a Paper from a digest.json entry (academic paper or company paper)."""
+        return cls(
+            id=d["id"],
+            title=d.get("title", ""),
+            abstract=d.get("abstract", ""),
+            authors=d.get("authors", []),
+            url=d.get("url", ""),
+            published=datetime.now(timezone.utc),
+            source=d.get("source", "arxiv"),
+            matched_author=d.get("matched_author"),
+            matched_keyword=d.get("matched_keyword"),
+            is_new_version=bool(d.get("is_new_version", False)),
+            relevance_score=int(d.get("relevance_score", 0)),
+            bullets=d.get("bullets") or {},
+        )
